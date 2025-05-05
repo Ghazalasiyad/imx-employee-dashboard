@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'react-feather'; // Assuming you're using React Feather icons
+import { LogOut } from 'react-feather'; 
+import logo from '../../assets/imx logo.jpg';
 
 // Custom Avatar component using TailwindCSS
 const Avatar = ({ src, alt, onClick }: { src: string, alt: string, onClick: () => void }) => {
@@ -26,7 +27,9 @@ const Navbar = () => {
 
   return (
     <header className="h-25 w-screen px-6 flex items-center justify-between bg-[#202938] border-b border-white">
-      <h4 className="text-xl font-semibold text-white">Employee Dashboard</h4>
+      <div ml-3>
+        <img src={logo} alt='Company Logo' width={200} />
+      </div>
 
       <div className="relative">
         {/* Avatar Component */}

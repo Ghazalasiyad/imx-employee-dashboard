@@ -4,12 +4,13 @@ import Dashboard from './Pages/Dashboard/Dashboard';
 import Leaves from './Pages/Leaves/Leaves';
 import Attendance from './Pages/Attendance/Attendance';
 import Notice from './Pages/Notice/Notice';
-
+import SignIn from './Pages/Signin/Signin';
 const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path='/' element={<Layout />}>
+      <Route path='/' element={<SignIn />} />
+        <Route path='dashboard' element={<Layout />}>
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='attendance' element={<Attendance />} />
           <Route path='leaves' element={<Leaves />} />

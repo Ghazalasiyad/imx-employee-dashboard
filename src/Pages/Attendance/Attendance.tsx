@@ -1,27 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+// import { Button } from "@/components/ui/button"; 
 
 const Attendance = () => {
-  const [today, setToday] = useState('');
+  const [today, setToday] = useState("");
+
   const [attendanceData] = useState([
-    
     {
-      date: 'Apr 30, 2025',
-      checkIn: '8:45 AM',
-      breakTime: '12:30 PM - 1:30 PM',
-      checkOut: '5:45 PM',
-      hours: '8h',
-      status: 'Complete',
+      date: "Apr 30, 2025",
+      checkIn: "8:45 AM",
+      breakTime: "12:30 PM - 1:30 PM",
+      checkOut: "5:45 PM",
+      hours: "8h",
+      status: "Complete",
     },
   ]);
 
+  const handleSelection = (type: string) => {
+    console.log(`${type} selected`);
+    // Add your checkout logic here
+  };
+
   useEffect(() => {
     const now = new Date();
-    setToday(now.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }));
+    setToday(
+      now.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    );
   }, []);
 
   return (
@@ -33,28 +47,45 @@ const Attendance = () => {
           <p className="text-sm text-gray-300">{today}</p>
         </div>
         <div className="flex gap-3">
-          <button className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm">➕ Check In</button>
-          <button className="!bg-[#f39f0b] text-white px-4 py-1 rounded-full text-sm">☕ Break</button>
-          <button className="!bg-[#dd2428]  text-white px-4 py-1 rounded-full text-sm">➖ Check Out</button>
+          <button className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm">
+            ➕ Check In
+          </button>
+          <button className="!bg-[#f39f0b] text-white px-4 py-1 rounded-full text-sm">
+            ☕ Break
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="!bg-[#dd2428] text-white px-4 py-1 rounded-full text-sm">
+                ➖ Check Out
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40 bg-white text-black">
+              <DropdownMenuItem onClick={() => handleSelection("Partial")}>
+                Partially Checkout
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSelection("Full")}>
+                Fully Checkout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Timeline Placeholder */}
       <div className="bg-[#2c3445] h-20 rounded-md flex items-center justify-start gap-6 px-6">
-  <div className="flex flex-col items-center text-xs text-green-400">
-    <div className="w-2 h-2 rounded-full bg-green-400 mb-1"></div>
-    9:00 AM
-  </div>
-  <div className="flex flex-col items-center text-xs text-yellow-300">
-    <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
-    1:00 PM
-  </div>
-  <div className="flex flex-col items-center text-xs text-yellow-300">
-    <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
-    2:00 PM
-  </div>
-</div>
-
+        <div className="flex flex-col items-center text-xs text-green-400">
+          <div className="w-2 h-2 rounded-full bg-green-400 mb-1"></div>
+          9:00 AM
+        </div>
+        <div className="flex flex-col items-center text-xs text-yellow-300">
+          <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
+          1:00 PM
+        </div>
+        <div className="flex flex-col items-center text-xs text-yellow-300">
+          <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
+          2:00 PM
+        </div>
+      </div>
 
       {/* Table */}
       <div className="overflow-x-auto">

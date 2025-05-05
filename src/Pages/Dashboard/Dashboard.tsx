@@ -28,7 +28,7 @@ const Dashboard = () => {
       setQuote(quotes[nextIndex]);
     }, 5000);
 
-    return () => clearInterval(interval); // Cleanup
+    return () => clearInterval(interval); 
   }, []);
 
   return (
