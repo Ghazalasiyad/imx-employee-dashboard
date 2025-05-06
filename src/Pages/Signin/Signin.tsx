@@ -28,8 +28,7 @@ const SignInForm: React.FC = () => {
   
   const [error, setError] = useState<string | null>(null);
 
-  // Commented out because login and useMutation are not imported
-  // const { mutate, isPending } = useMutation({ mutationFn: login });
+  
 
   const {
     register,
@@ -42,14 +41,7 @@ const SignInForm: React.FC = () => {
   const onSubmit = (data: SignInFormData) => {
     setError(null);
     console.log(data);
-    // mutate(data, {
-    //   onSuccess: () => navigate('/portal/employees'),
-    //   onError: (err: any) => {
-    //     const errorMessage =
-    //       err.response?.data || err.message || 'Login failed. Please try again.';
-    //     setError(errorMessage);
-    //   },
-    // });
+   
   };
 
   return (
