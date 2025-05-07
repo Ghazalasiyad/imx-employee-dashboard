@@ -8,6 +8,7 @@ import Button from '../../components/Button/button';
 import { useMutation } from '@tanstack/react-query';
 import { login } from '@/components/Api/PostServices';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const signInSchema = z.object({
   email: z.string().min(1, 'Please enter email').email('Enter a valid email').max(30),
@@ -16,13 +17,6 @@ const signInSchema = z.object({
 
 type SignInFormData = z.infer<typeof signInSchema>;
 
-// ✅ Full screen loader component
-const FullScreenLoader = () => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-  </div>
-);
-
 const SignInForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -30,7 +24,7 @@ const SignInForm: React.FC = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      console.log('Login successful');
+      toast.success('Login successful!');
       navigate('/dashboard');
     },
     onError: (err: any) => {
@@ -54,7 +48,6 @@ const SignInForm: React.FC = () => {
 
   return (
     <>
-      {isPending && <FullScreenLoader />}
       <div className="h-screen w-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white shadow-lg rounded-xl px-12 py-10 w-full max-w-md">
           <div className="flex justify-center mb-8">
@@ -91,9 +84,14 @@ const SignInForm: React.FC = () => {
                 />
               </Field>
 
-              <Button type="submit" disabled={isPending} className="w-full !bg-[#2c3445]">
-                Sign In
+              <Button type="submit" disabled={isPending} className="w-full !bg-[#2c3445] flex items-center justify-center">
+                {isPending ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
+
             </div>
           </form>
         </div>
