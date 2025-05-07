@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'react-feather'; 
-import logo from '../../assets/imx logo.jpg';
+import logo from '../../assets/imx-logo.jpg';
 
 // Custom Avatar component using TailwindCSS
 const Avatar = ({ src, alt, onClick }: { src: string, alt: string, onClick: () => void }) => {
