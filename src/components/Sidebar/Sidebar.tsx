@@ -52,6 +52,18 @@ const Sidebar = () => {
             Notices
           </NavLink>
         </div>
+        <div>
+          <NavLink
+            to="/finance"
+            className={({ isActive }) =>
+              `w-full text-md font-medium rounded-md py-2 px-14 text-center !text-white ${
+                isActive ? 'bg-[#384152] text-[#689ddd]' : 'hover:bg-[#384152] hover:text-[#689ddd]'
+              }`
+            }
+          >
+           Finance
+          </NavLink>
+        </div>
       </nav>
     </aside>
   );
