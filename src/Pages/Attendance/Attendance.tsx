@@ -5,10 +5,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-// import { Button } from "@/components/ui/button"; 
+import { useMutation } from "@tanstack/react-query";
+import { checkIn } from "@/components/Api/PostServices";
 
 const Attendance = () => {
   const [today, setToday] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
 
   const [attendanceData] = useState([
     {
@@ -23,7 +25,6 @@ const Attendance = () => {
 
   const handleSelection = (type: string) => {
     console.log(`${type} selected`);
-    // Add your checkout logic here
   };
 
   useEffect(() => {
@@ -38,16 +39,39 @@ const Attendance = () => {
     );
   }, []);
 
+
+useEffect(() => {
+  const employee = localStorage.getItem("employeeId");
+  if (employee) {
+    setEmployeeId(employee); 
+  }
+}, []);
+
+  const {
+    mutate: handleCheckIn,
+    isPending,
+    isSuccess,
+    isError,
+  } = useMutation({
+    mutationFn: () => checkIn(),
+    onSuccess: (data) => {
+      console.log("Check-in successful", data);
+    },
+    onError: (err) => {
+      console.error("Check-in error:", err);
+    },
+  });
+
   return (
     <div className="bg-[#1a2233] text-white mt-10 rounded-xl shadow-lg p-6 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold">Today's Attendance</h2>
           <p className="text-sm text-gray-300">{today}</p>
         </div>
         <div className="flex gap-3">
-          <button className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm">
+          <button onClick={() => handleCheckIn()}
+            disabled={isPending} className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm">
             ➕ Check In
           </button>
           <button className="!bg-[#f39f0b] text-white px-4 py-1 rounded-full text-sm">
@@ -71,7 +95,6 @@ const Attendance = () => {
         </div>
       </div>
 
-      {/* Timeline Placeholder */}
       <div className="bg-[#2c3445] h-20 rounded-md flex items-center justify-start gap-6 px-6">
         <div className="flex flex-col items-center text-xs text-green-400">
           <div className="w-2 h-2 rounded-full bg-green-400 mb-1"></div>
@@ -87,7 +110,6 @@ const Attendance = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-[#2c3445] text-gray-300">
