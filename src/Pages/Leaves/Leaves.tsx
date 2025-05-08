@@ -50,13 +50,16 @@ const Leaves = () => {
         </div>
       </div>
 
-      {/* Apply Button */}
-      <Button
-        className="!bg-[#26344e] hover:bg-blue-700 text-white"
-        onClick={() => setShowPopup(true)}
-      >
-        + Apply for Leave
-      </Button>
+      <div className="flex justify-end">
+  <Button
+    className="!bg-[#26344e] hover:bg-blue-700 text-white"
+    onClick={() => setShowPopup(true)}
+  >
+    + Apply for Leave
+  </Button>
+</div>
+
+
 
       {/* Inline Popup Form */}
       {showPopup && (
