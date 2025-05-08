@@ -23,36 +23,36 @@ const Leaves = () => {
   };
 
   return (
-    <div className="w-full px-6 py-6 space-y-6 bg-[#1a1f2e] min-h-screen text-white relative">
+    <div className="w-full px-6 py-6 space-y-6 min-h-screen text-white relative">
       <div className="flex flex-wrap gap-6">
         {/* Cards */}
         
-        <div className="bg-[#2c3445] rounded-xl px-6 py-4 w-64 text-white">
-          <p className="text-sm text-gray-300 mb-1">Annual Leave</p>
+        <div className="bg-white text-black rounded-xl px-6 py-4 w-64 ">
+          <p className="text-sm text-black mb-1">Annual Leave</p>
           <p className="text-3xl font-semibold">15</p>
-          <p className="text-sm text-gray-400">of 24 days</p>
+          <p className="text-sm text-black">of 24 days</p>
         </div>
-        <div className="bg-[#2c3445] rounded-xl px-6 py-4 w-64 text-white">
-          <p className="text-sm text-gray-300 mb-1">Sick Leave</p>
+        <div className="bg-white text-black  rounded-xl px-6 py-4 w-64 ">
+          <p className="text-sm text-black mb-1">Sick Leave</p>
           <p className="text-3xl font-semibold">15</p>
-          <p className="text-sm text-gray-400">of 24 days</p>
+          <p className="text-sm text-black">of 24 days</p>
         </div>
-        <div className="bg-[#2c3445] rounded-xl px-6 py-4 w-64 text-white">
-          <p className="text-sm text-gray-300 mb-1">Pending Requests</p>
+        <div className="bg-white text-black  rounded-xl px-6 py-4 w-64 ">
+          <p className="text-sm text-black  mb-1">Pending Requests</p>
           <p className="text-3xl font-semibold text-blue-400">2</p>
-          <p className="text-sm text-gray-400">requests</p>
+          <p className="text-sm text-black ">requests</p>
         </div>
 
-        <div className="bg-[#2c3445] rounded-xl px-6 py-4 w-64 text-white">
-          <p className="text-sm text-gray-300 mb-1">Approved</p>
+        <div className="bg-white text-black  rounded-xl px-6 py-4 w-64 ">
+          <p className="text-sm text-black  mb-1">Approved</p>
           <p className="text-3xl font-semibold text-green-400">8</p>
-          <p className="text-sm text-gray-400">this year</p>
+          <p className="text-sm text-black ">this year</p>
         </div>
       </div>
 
       {/* Apply Button */}
       <Button
-        className="!bg-blue-600 hover:bg-blue-700 text-white"
+        className="!bg-[#26344e] hover:bg-blue-700 text-white"
         onClick={() => setShowPopup(true)}
       >
         + Apply for Leave
@@ -128,10 +128,10 @@ const Leaves = () => {
         
       )}
       {/* Leave History Section */}
-<div className="bg-[#2c3445] rounded-xl p-6 mt-8 overflow-x-auto">
+<div className="bg-white rounded-xl p-6 mt-8 overflow-x-auto">
   <h2 className="text-lg font-semibold mb-4">Leave History</h2>
   <table className="w-full text-sm text-left text-white">
-    <thead className="text-xs uppercase text-gray-400 border-b border-gray-600">
+    <thead className="text-xs uppercase text-black border-b border-[#f4f7fa]">
       <tr>
         <th scope="col" className="py-3 px-4">Type</th>
         <th scope="col" className="py-3 px-4">Date</th>
@@ -141,7 +141,7 @@ const Leaves = () => {
       </tr>
     </thead>
     <tbody>
-      <tr className="border-b border-gray-700">
+      <tr className="border-b border-[#f4f7fa] text-black">
         <td className="py-3 px-4">Annual Leave</td>
         <td className="py-3 px-4">Mar 3-4, 2025</td>
         <td className="py-3 px-4">2</td>
@@ -152,7 +152,7 @@ const Leaves = () => {
           <span className="text-blue-400 cursor-pointer hover:underline">View</span>
         </td>
       </tr>
-      <tr>
+      <tr className="border-b border-[#f4f7fa] text-black ">
         <td className="py-3 px-4">Sick Leave</td>
         <td className="py-3 px-4">Feb 15, 2025</td>
         <td className="py-3 px-4">1</td>

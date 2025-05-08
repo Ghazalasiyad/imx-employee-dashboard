@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar/Navbar';
 
 const Layout = () => {
   return (
-    <div className="h-screen flex flex-col bg-[#202938]">
+    <div className="h-screen flex flex-col bg-[#f9f9f9]">
       {/* Navbar on top */}
       <Navbar />
 

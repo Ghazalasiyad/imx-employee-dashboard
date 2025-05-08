@@ -39,7 +39,7 @@ const Attendance = () => {
   }, []);
 
   return (
-    <div className="bg-[#1a2233] text-white mt-10 rounded-xl shadow-lg p-6 max-w-6xl mx-auto space-y-6">
+    <div className="bg-white text-black mt-10 rounded-xl shadow-lg p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -72,7 +72,7 @@ const Attendance = () => {
       </div>
 
       {/* Timeline Placeholder */}
-      <div className="bg-[#2c3445] h-20 rounded-md flex items-center justify-start gap-6 px-6">
+      <div className="bg-[#f9f9f9] h-20 rounded-md flex items-center justify-start gap-6 px-6">
         <div className="flex flex-col items-center text-xs text-green-400">
           <div className="w-2 h-2 rounded-full bg-green-400 mb-1"></div>
           9:00 AM
@@ -90,7 +90,7 @@ const Attendance = () => {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-[#2c3445] text-gray-300">
+          <thead className="bg-[#f9f9f9] text-black">
             <tr>
               <th className="p-3">DATE</th>
               <th className="p-3">CHECK IN</th>
@@ -102,7 +102,7 @@ const Attendance = () => {
           </thead>
           <tbody>
             {attendanceData.map((item, index) => (
-              <tr key={index} className="border-t border-[#2c3445]">
+              <tr key={index} className="border-t border-[#eff4f8]">
                 <td className="p-3">{item.date}</td>
                 <td className="p-3">{item.checkIn}</td>
                 <td className="p-3">{item.breakTime}</td>

@@ -31,11 +31,11 @@ const notices: Notice[] = [
 
 const Notice = () => {
   return (
-    <div className="p-6 space-y-4 bg-[#1a2233]">
-      <h2 className="text-2xl font-semibold text-white">Notices</h2>
+    <div className="p-6 space-y-4">
+      <h2 className="text-2xl font-semibold text-black">Notices</h2>
 
       {notices.map((notice) => (
-        <Card key={notice.id} className="bg-[#2c3445] text-white">
+        <Card key={notice.id} className="bg-white text-black">
           <CardHeader>
             <CardTitle className="text-lg">{notice.title}</CardTitle>
             <p className="text-sm text-gray-400">{notice.date}</p>
