@@ -6,9 +6,11 @@ import Attendance from './Pages/Attendance/Attendance';
 import Notice from './Pages/Notice/Notice';
 import SignIn from './Pages/Signin/Signin';
 import Finance from './Pages/Finance/Finance';
+import { Toaster } from 'react-hot-toast';
 const App = () => {
   return (
     <Router>
+       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
       <Route path='/' element={<SignIn />} />
         <Route path='/' element={<Layout />}>
