@@ -6,11 +6,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useMutation } from "@tanstack/react-query";
-import { checkIn } from "@/components/Api/PostServices";
+import { checkIn, checkOut, partialCheckout } from "@/components/Api/PostServices";
+import { toast } from "react-toastify";
 
 const Attendance = () => {
   const [today, setToday] = useState("");
   const [employeeId, setEmployeeId] = useState("");
+  const [hasCheckedIn, setHasCheckedIn] = useState(false);
 
   const [attendanceData] = useState([
     {
@@ -22,10 +24,6 @@ const Attendance = () => {
       status: "Complete",
     },
   ]);
-
-  const handleSelection = (type: string) => {
-    console.log(`${type} selected`);
-  };
 
   useEffect(() => {
     const now = new Date();
@@ -40,26 +38,72 @@ const Attendance = () => {
   }, []);
 
 
-useEffect(() => {
-  const employee = localStorage.getItem("employeeId");
-  if (employee) {
-    setEmployeeId(employee); 
-  }
-}, []);
+  useEffect(() => {
+    const employee = localStorage.getItem("employeeId");
+    if (employee) {
+      setEmployeeId(employee);
+    }
+  }, []);
 
   const {
     mutate: handleCheckIn,
     isPending,
-    isSuccess,
-    isError,
   } = useMutation({
     mutationFn: () => checkIn(),
     onSuccess: (data) => {
       console.log("Check-in successful", data);
+      setHasCheckedIn(true);
+      localStorage.setItem("hasCheckedIn", "true");
     },
-    onError: (err) => {
-      console.error("Check-in error:", err);
+    onError: (error: any) => {
+      console.log("onError called:", error);
+
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Something went wrong!";
+
+      toast.error(message);
+    }
+  });
+
+  const {
+    mutate: handlePartialCheckout,
+    isPending: isPartialCheckingOut,
+  } = useMutation({
+    mutationFn: () => partialCheckout(),
+    onSuccess: (data) => {
+      console.log("Partial checkout successful", data);
+      toast.success("Partial checkout successful!");
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Something went wrong during partial checkout!";
+      toast.error(message);
+    }
+  });
+
+  const {
+    mutate: handleCheckOut,
+    isPending: isCheckingOut,
+  } = useMutation({
+    mutationFn: () => checkOut(),
+    onSuccess: (data) => {
+      console.log("Full checkout successful", data);
+      toast.success("You have fully checked out!");
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Something went wrong during full checkout!";
+      toast.error(message);
+    }
   });
 
   return (
@@ -70,13 +114,18 @@ useEffect(() => {
           <p className="text-sm text-gray-300">{today}</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => handleCheckIn()}
-            disabled={isPending} className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm">
+          <button
+            onClick={() => handleCheckIn()}
+            disabled={isPending || hasCheckedIn}
+            className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             ➕ Check In
           </button>
+
           <button className="!bg-[#f39f0b] text-white px-4 py-1 rounded-full text-sm">
             ☕ Break
           </button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="!bg-[#dd2428] text-white px-4 py-1 rounded-full text-sm">
@@ -84,10 +133,10 @@ useEffect(() => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-40 bg-white text-black">
-              <DropdownMenuItem onClick={() => handleSelection("Partial")}>
+              <DropdownMenuItem onClick={() => handlePartialCheckout()}>
                 Partially Checkout
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSelection("Full")}>
+              <DropdownMenuItem onClick={() => handleCheckOut()}>
                 Fully Checkout
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -26,8 +26,6 @@ export async function login({
 
 //check api
 
-
-
 export async function checkIn(): Promise<any> {
   const employeeId = localStorage.getItem('employeeId');
   if (!employeeId) {
@@ -38,3 +36,18 @@ export async function checkIn(): Promise<any> {
   return response.data;
 }
 
+export async function partialCheckout(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  return await Instance.post(`/attendance/partial-checkout`, { employeeId });
+}
+
+
+export async function checkOut(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const response = await Instance.post(`/attendance/check-out`, { employeeId });
+  return response.data;
+}
