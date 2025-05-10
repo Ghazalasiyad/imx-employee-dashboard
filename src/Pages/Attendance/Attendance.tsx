@@ -5,8 +5,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useMutation } from "@tanstack/react-query";
-import { checkIn, checkOut, partialCheckout } from "@/components/Api/PostServices";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { checkIn, checkOut, getAttendanceSummary, partialCheckout } from "@/components/Api/PostServices";
 import { toast } from "react-toastify";
 
 const Attendance = () => {
@@ -14,16 +14,16 @@ const Attendance = () => {
   const [employeeId, setEmployeeId] = useState("");
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
 
-  const [attendanceData] = useState([
-    {
-      date: "Apr 30, 2025",
-      checkIn: "8:45 AM",
-      breakTime: "12:30 PM - 1:30 PM",
-      checkOut: "5:45 PM",
-      hours: "8h",
-      status: "Complete",
-    },
-  ]);
+  // const [attendanceData] = useState([
+  //   {
+  //     date: "Apr 30, 2025",
+  //     checkIn: "8:45 AM",
+  //     breakTime: "12:30 PM - 1:30 PM",
+  //     checkOut: "5:45 PM",
+  //     hours: "8h",
+  //     status: "Complete",
+  //   },
+  // ]);
 
   useEffect(() => {
     const now = new Date();
@@ -44,29 +44,50 @@ const Attendance = () => {
       setEmployeeId(employee);
     }
   }, []);
-
   const {
     mutate: handleCheckIn,
     isPending,
   } = useMutation({
     mutationFn: () => checkIn(),
     onSuccess: (data) => {
-      console.log("Check-in successful", data);
       setHasCheckedIn(true);
       localStorage.setItem("hasCheckedIn", "true");
+
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      const formattedTime = now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+      });
+
     },
     onError: (error: any) => {
       console.log("onError called:", error);
-
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.message ||
         "Something went wrong!";
-
       toast.error(message);
-    }
+    },
   });
+
+  onError: (error: any) => {
+    console.log("onError called:", error);
+
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Something went wrong!";
+
+    toast.error(message);
+  }
+    ;
 
   const {
     mutate: handlePartialCheckout,
@@ -74,7 +95,6 @@ const Attendance = () => {
   } = useMutation({
     mutationFn: () => partialCheckout(),
     onSuccess: (data) => {
-      console.log("Partial checkout successful", data);
       toast.success("Partial checkout successful!");
     },
     onError: (error: any) => {
@@ -106,6 +126,56 @@ const Attendance = () => {
     }
   });
 
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["attendanceSummary", employeeId],
+    queryFn: getAttendanceSummary,
+    enabled: !!employeeId,
+  });
+
+  useEffect(() => {
+    const now = new Date();
+    setToday(
+      now.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    );
+  }, []);
+
+  useEffect(() => {
+    const employee = localStorage.getItem("employeeId");
+    if (employee) {
+      setEmployeeId(employee);
+    }
+  }, []);
+
+  const attendanceData =
+  data && data.data.records && data.data.records.length > 0
+    ? [
+        {
+          date: data.data.records[0].date,
+          checkIn: data.data.records[0].checkInTime || "N/A",
+          breakTime: data.data.records[0].breakTime
+            ? `${data.data.records[0].breakTime.start} - ${data.data.records[0].breakTime.end}`
+            : "N/A",
+          checkOut: data.data.records[0].checkOutTime || "N/A",
+          hours: data.data.records[0].totalHoursWorked
+            ? `${data.data.records[0].totalHoursWorked}h`
+            : "N/A",
+          status: "Complete",
+        },
+      ]
+    : [];
+
+
+    useEffect(() => {
+      if (data) {
+        console.log("Attendance data:", data);
+      }
+    }, [data]);
+    
   return (
     <div className="bg-[#1a2233] text-white mt-10 rounded-xl shadow-lg p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -172,21 +242,36 @@ const Attendance = () => {
             </tr>
           </thead>
           <tbody>
-            {attendanceData.map((item, index) => (
-              <tr key={index} className="border-t border-[#2c3445]">
-                <td className="p-3">{item.date}</td>
-                <td className="p-3">{item.checkIn}</td>
-                <td className="p-3">{item.breakTime}</td>
-                <td className="p-3">{item.checkOut}</td>
-                <td className="p-3">{item.hours}</td>
-                <td className="p-3">
-                  <span className="bg-green-200 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">
-                    {item.status}
-                  </span>
-                </td>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="p-3 text-center text-gray-400">Loading...</td>
               </tr>
-            ))}
+            ) : isError ? (
+              <tr>
+                <td colSpan={6} className="p-3 text-center text-red-400">Error fetching attendance summary</td>
+              </tr>
+            ) : attendanceData.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-3 text-center text-gray-400">No attendance data found</td>
+              </tr>
+            ) : (
+              attendanceData.map((item, index) => (
+                <tr key={index} className="border-t border-[#2c3445]">
+                  <td className="p-3">{item.date}</td>
+                  <td className="p-3">{item.checkIn}</td>
+                  <td className="p-3">{item.breakTime}</td>
+                  <td className="p-3">{item.checkOut}</td>
+                  <td className="p-3">{item.hours}</td>
+                  <td className="p-3">
+                    <span className="bg-green-200 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
+
         </table>
       </div>
     </div>

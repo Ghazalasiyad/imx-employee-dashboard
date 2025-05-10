@@ -51,3 +51,16 @@ export async function checkOut(): Promise<any> {
   const response = await Instance.post(`/attendance/check-out`, { employeeId });
   return response.data;
 }
+
+
+
+export async function getAttendanceSummary(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const response = await Instance.get(`/attendance/getAttendanceSummary/${employeeId}?date=${today}`);
+  return response.data;
+}
