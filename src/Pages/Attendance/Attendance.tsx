@@ -8,6 +8,8 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { checkIn, checkOut, getAttendanceSummary, partialCheckout } from "@/components/Api/PostServices";
 import { toast } from "react-toastify";
+import { format } from "date-fns";
+
 
 const Attendance = () => {
   const [today, setToday] = useState("");
@@ -151,16 +153,25 @@ const Attendance = () => {
     }
   }, []);
 
-  const attendanceData =
+const attendanceData =
   data && data.data.records && data.data.records.length > 0
     ? [
         {
-          date: data.data.records[0].date,
-          checkIn: data.data.records[0].checkInTime || "N/A",
-          breakTime: data.data.records[0].breakTime
-            ? `${data.data.records[0].breakTime.start} - ${data.data.records[0].breakTime.end}`
+          date: data.data.records[0].date
+            ? format(new Date(data.data.records[0].date), "dd MMM yyyy")
             : "N/A",
-          checkOut: data.data.records[0].checkOutTime || "N/A",
+          checkIn: data.data.records[0].checkInTime
+            ? format(new Date(data.data.records[0].checkInTime), "hh:mm a")
+            : "N/A",
+          breakTime: data.data.records[0].breakTime
+            ? `${format(new Date(data.data.records[0].breakTime.start), "hh:mm a")} - ${format(
+                new Date(data.data.records[0].breakTime.end),
+                "hh:mm a"
+              )}`
+            : "N/A",
+          checkOut: data.data.records[0].checkOutTime
+            ? format(new Date(data.data.records[0].checkOutTime), "hh:mm a")
+            : "N/A",
           hours: data.data.records[0].totalHoursWorked
             ? `${data.data.records[0].totalHoursWorked}h`
             : "N/A",
@@ -168,6 +179,7 @@ const Attendance = () => {
         },
       ]
     : [];
+
 
 
     useEffect(() => {
