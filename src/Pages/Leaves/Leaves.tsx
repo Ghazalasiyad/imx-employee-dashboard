@@ -1,12 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AddLeave } from "@/components/Api/PostServices";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AddLeave, getLeaves } from "@/components/Api/PostServices";
+import { useMutation, useQueryClient,useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const Leaves = () => {
+  const calculateDays = (startDate: string, endDate: string): number => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+  return diffDays;
+};
+
   const [showPopup, setShowPopup] = useState(false);
   const [formData, setFormData] = useState({
     startDate: "",
@@ -16,6 +24,14 @@ const Leaves = () => {
   });
 
   const queryClient = useQueryClient();
+
+  const { data: leaves, isLoading, isError } = useQuery({
+  queryKey: ["leaves"],
+  queryFn: getLeaves,
+});
+console.log("Leave data:", leaves);
+
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -205,38 +221,53 @@ const Leaves = () => {
               </th>
             </tr>
           </thead>
-          <tbody>
-            <tr className="border-b border-[#f4f7fa] text-black">
-              <td className="py-3 px-4">Annual Leave</td>
-              <td className="py-3 px-4">Mar 3-4, 2025</td>
-              <td className="py-3 px-4">2</td>
-              <td className="py-3 px-4">
-                <span className="bg-green-600 text-white text-xs font-medium px-3 py-1 rounded-full">
-                  Approved
-                </span>
-              </td>
-              <td className="py-3 px-4">
-                <span className="text-blue-400 cursor-pointer hover:underline">
-                  View
-                </span>
-              </td>
-            </tr>
-            <tr className="border-b border-[#f4f7fa] text-black ">
-              <td className="py-3 px-4">Sick Leave</td>
-              <td className="py-3 px-4">Feb 15, 2025</td>
-              <td className="py-3 px-4">1</td>
-              <td className="py-3 px-4">
-                <span className="bg-yellow-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                  Pending
-                </span>
-              </td>
-              <td className="py-3 px-4">
-                <span className="text-blue-400 cursor-pointer hover:underline">
-                  View
-                </span>
-              </td>
-            </tr>
-          </tbody>
+         <tbody>
+  {isLoading ? (
+    <tr>
+      <td colSpan={5} className="text-center py-4 text-black">Loading...</td>
+    </tr>
+  ) : isError ? (
+    <tr>
+      <td colSpan={5} className="text-center py-4 text-red-500">Failed to load leave history.</td>
+    </tr>
+  ) : leaves && leaves.length > 0 ? (
+     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    leaves.map((leave: any, index: number) => (
+      <tr key={index} className="border-b border-[#f4f7fa] text-black">
+        <td className="py-3 px-4 capitalize">{leave.leaveType}</td>
+        <td className="py-3 px-4">
+          {leave.startDate} - {leave.endDate}
+        </td>
+        <td className="py-3 px-4">
+          {calculateDays(leave.startDate, leave.endDate)}
+        </td>
+        <td className="py-3 px-4">
+          <span
+            className={`text-white text-xs font-medium px-3 py-1 rounded-full ${
+              leave.status === "approved"
+                ? "bg-green-600"
+                : leave.status === "pending"
+                ? "bg-yellow-500"
+                : "bg-red-500"
+            }`}
+          >
+            {leave.status}
+          </span>
+        </td>
+        <td className="py-3 px-4">
+          <span className="text-blue-400 cursor-pointer hover:underline">
+            View
+          </span>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={5} className="text-center py-4 text-black">No leave history found.</td>
+    </tr>
+  )}
+</tbody>
+
         </table>
       </div>
     </div>

@@ -45,6 +45,17 @@ export async function login({
 
 
 
+// get leave 
+ 
+
+export const getLeaves = async () => {
+  const response = await Instance.get("leaveRequest/myLeaves");
+  return response.data.data;
+};
+
+
+
+
 
 
 
