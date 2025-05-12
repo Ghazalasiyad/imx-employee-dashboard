@@ -3,6 +3,70 @@ import { loginResponse,ILeaveRequest } from "./types";
 
 
 export async function login({
+
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<loginResponse> {
+  try {
+    const response = await Instance.post(`/employee/login`, { email, password });
+
+    // Save the token and employee data to localStorage
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('employeeId', response.data.employee.id);
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || error.message || 'Failed to login'
+    );
+  }
+}
+
+//check api
+
+export async function checkIn(): Promise<any> {
+  const employeeId = localStorage.getItem('employeeId');
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const response = await Instance.post(`/attendance/check-in`, { employeeId });
+  return response.data;
+}
+
+export async function partialCheckout(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  return await Instance.post(`/attendance/partial-checkout`, { employeeId });
+}
+
+
+export async function checkOut(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const response = await Instance.post(`/attendance/check-out`, { employeeId });
+  return response.data;
+}
+
+
+
+export async function getAttendanceSummary(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const response = await Instance.get(`/attendance/getAttendanceSummary/${employeeId}?date=${today}`);
+  return response.data;
+}
+=======
     email,
     password,
   }: {
@@ -58,22 +122,3 @@ export const getLeaves = async () => {
 
 
 
-
-// export async function AddLeave(newLeave: FormData): Promise<any> {
-//   try {
-//     const token = localStorage.getItem("token"); // or sessionStorage, depending on where you store it
-
-//     const response = await Instance.post(`/leaveRequest/applyLeave`, newLeave, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//         Authorization: `Bearer ${token}`,
-//       },
-//     });
-
-//     return response.data;
-//   } catch (error: any) {
-//     throw new Error(
-//       error.response?.data?.message || error.message || 'Failed to add Leave Request'
-//     );
-//   }
-// }
