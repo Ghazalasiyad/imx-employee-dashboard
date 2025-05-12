@@ -1,7 +1,9 @@
 import { Instance } from "./api";
-import { loginResponse } from "./types";
+import { loginResponse,ILeaveRequest } from "./types";
+
 
 export async function login({
+
   email,
   password,
 }: {
@@ -64,3 +66,59 @@ export async function getAttendanceSummary(): Promise<any> {
   const response = await Instance.get(`/attendance/getAttendanceSummary/${employeeId}?date=${today}`);
   return response.data;
 }
+=======
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<loginResponse> {
+    try {
+      const response = await Instance.post(`/employee/login`, { email, password });
+      localStorage.setItem('isAuthenticated', 'true');
+  
+      return response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || error.message || 'Failed to login',
+      );
+    }
+  }
+
+
+
+
+//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest > {
+  try {
+    const response = await Instance.post(`/leaveRequest/applyLeave`, newLeave, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || error.message || 'Failed to add Leave Request',
+    );
+  }
+}
+
+
+
+// get leave 
+ 
+
+export const getLeaves = async () => {
+  const response = await Instance.get("leaveRequest/myLeaves");
+  return response.data.data;
+};
+
+
+
+
+
+

@@ -18,12 +18,12 @@ const financeData = [
 
 const Finance = () => {
   return (
-    <div className="p-6 bg-[#1a2233] min-h-screen text-white">
+    <div className="p-6  min-h-screen text-black">
       <h2 className="text-2xl font-semibold mb-4">Finance Overview</h2>
-      <div className="bg-[#2c3445] rounded-lg shadow-md p-4 overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-md p-4 overflow-x-auto">
         <table className="min-w-full table-auto text-left">
           <thead>
-            <tr className="border-b border-gray-600">
+            <tr className="border-b border-[#f4f7fa]">
               <th className="py-2 px-4">Month</th>
               <th className="py-2 px-4">Income</th>
               <th className="py-2 px-4">Description</th>
@@ -32,7 +32,7 @@ const Finance = () => {
           </thead>
           <tbody>
             {financeData.map((entry, index) => (
-              <tr key={index} className="border-t border-gray-700">
+              <tr key={index} className="border-t border-[#f4f7fa]0">
                 <td className="py-2 px-4">{entry.month}</td>
                 <td className="py-2 px-4">{entry.income}</td>
                 <td className="py-2 px-4">{entry.description}</td>
