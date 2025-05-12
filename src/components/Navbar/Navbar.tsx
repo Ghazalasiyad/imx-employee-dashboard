@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
     <header className="h-25 w-screen px-6 flex items-center justify-between bg-white">
-      <div ml-3>
+      <div>
         <img src={logo} alt='Company Logo' width={200} />
       </div>
 
