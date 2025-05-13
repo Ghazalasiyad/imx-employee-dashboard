@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
 
-    <header className="h-25 w-screen px-6 flex items-center justify-between bg-[#202938] border-b border-white">
+    
     <header className="h-25 w-screen px-6 flex items-center justify-between bg-white">
 
       <div>

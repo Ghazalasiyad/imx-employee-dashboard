@@ -27,7 +27,7 @@ const SignInForm: React.FC = () => {
       toast.success('Login successful!');
       navigate('/dashboard');
     },
-    onError: (err: any) => {
+    onError: (err:any) => {
       const errorMessage =
         err.response?.data?.message || err.message || 'Login failed. Please try again.';
       setError(errorMessage);
