@@ -24,7 +24,7 @@ export async function login({
 // Check-in
 export async function checkIn(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
-  if (!employeeId) {
+  if (!employeeId) {  
     throw new Error("Employee ID not found");
   }
 

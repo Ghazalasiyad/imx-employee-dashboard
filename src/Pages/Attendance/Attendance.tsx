@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,10 +14,19 @@ import {
 } from "@/components/Api/PostServices";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+
 const Attendance = () => {
   const [today, setToday] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
+  const [onBreak, setOnBreak] = useState(false);
+  const [partiallyCheckedOut, setPartiallyCheckedOut] = useState(false);
+  const [timelineEvents, setTimelineEvents] = useState<Array<{
+    type: string;
+    time: Date;
+    description: string;
+  }>>([]);
+
   useEffect(() => {
     const now = new Date();
     setToday(
@@ -29,6 +38,7 @@ const Attendance = () => {
       })
     );
   }, []);
+
   useEffect(() => {
     const employee = localStorage.getItem("employeeId");
     if (employee) {
@@ -39,14 +49,28 @@ const Attendance = () => {
       setHasCheckedIn(true);
     }
   }, []);
+
+  const addTimelineEvent = (type: string, description: string) => {
+    const now = new Date();
+    setTimelineEvents(prev => [
+      ...prev,
+      { type, time: now, description }
+    ]);
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const {
     mutate: handleCheckIn,
-    isPending,
+    isPending: isCheckingIn,
   } = useMutation({
     mutationFn: () => checkIn(),
     onSuccess: () => {
       setHasCheckedIn(true);
       localStorage.setItem("hasCheckedIn", "true");
+      addTimelineEvent('checkin', 'Checked in');
       toast.success("Checked in successfully!");
     },
     onError: (error: any) => {
@@ -58,12 +82,15 @@ const Attendance = () => {
       toast.error(message);
     },
   });
+
   const {
     mutate: handlePartialCheckout,
     isPending: isPartialCheckingOut,
   } = useMutation({
     mutationFn: () => partialCheckout(),
     onSuccess: () => {
+      setPartiallyCheckedOut(true);
+      addTimelineEvent('checkout', 'Partially checked out');
       toast.success("Partial checkout successful!");
     },
     onError: (error: any) => {
@@ -75,12 +102,14 @@ const Attendance = () => {
       toast.error(message);
     },
   });
+
   const {
     mutate: handleCheckOut,
     isPending: isCheckingOut,
   } = useMutation({
     mutationFn: () => checkOut(),
     onSuccess: () => {
+      addTimelineEvent('checkout', 'Fully checked out');
       toast.success("You have fully checked out!");
     },
     onError: (error: any) => {
@@ -92,149 +121,229 @@ const Attendance = () => {
       toast.error(message);
     },
   });
+
+  const handleReturnToWork = () => {
+    setPartiallyCheckedOut(false);
+    addTimelineEvent('return', 'Returned to work');
+  };
+
+  const handleBreak = () => {
+    if (!onBreak) {
+      // Start break
+      setOnBreak(true);
+      addTimelineEvent('break-start', 'Break started');
+    } else {
+      // End break
+      setOnBreak(false);
+      addTimelineEvent('break-end', 'Break ended');
+    }
+  };
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["attendanceSummary", employeeId],
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
   });
-console.log('new data' ,data)
-
-  // const attendanceData =
-  //   data?.data?.records?.length > 0
-  //     ? [
-  //         {
-  //           date: data.data.records[0].date
-  //             ? format(new Date(data.data.records[0].date), "dd MMM yyyy")
-  //             : "N/A",
-  //           checkIn: data.data.records[0].checkInTime
-  //             ? format(new Date(data.data.records[0].checkInTime), "hh:mm a")
-  //             : "N/A",
-  //           breakTime: data.data.records[0].breakTime
-  //             ? `${format(new Date(data.data.records[0].breakTime.start), "hh:mm a")} - ${format(
-  //                 new Date(data.data.records[0].breakTime.end),
-  //                 "hh:mm a"
-  //               )}`
-  //             : "N/A",
-  //           checkOut: data.data.records[0].checkOutTime
-  //             ? format(new Date(data.data.records[0].checkOutTime), "hh:mm a")
-  //             : "N/A",
-  //           hours: data.data.records[0].totalHoursWorked
-  //             ? `${data.data.records[0].totalHoursWorked}h`
-  //             : "N/A",
-  //           status: "Complete",
-  //         },
-  //       ]
-  //     : [];
+  const attendanceData = useMemo(() => {
+    if (data?.data?.records?.length > 0) {
+      const record = data.data.records[0];
+      return [{
+        date: record.date ? format(new Date(record.date), "dd MMM yyyy") : "N/A",
+        checkIn: record.checkInTime ? format(new Date(record.checkInTime), "hh:mm a") : "N/A",
+        breakTime: record.breakTime
+          ? `${format(new Date(record.breakTime.start), "hh:mm a")} - ${format(new Date(record.breakTime.end), "hh:mm a")}`
+          : "N/A",
+        checkOut: record.checkOutTime ? format(new Date(record.checkOutTime), "hh:mm a") : "N/A",
+        hours: record.totalHoursWorked ? `${record.totalHoursWorked}h` : "N/A",
+        status: "Complete",
+      }];
+    }
+    return [];
+  }, [data]);
 
 
-  const attendanceData = data
-  ? [
-      {
-        date: "N/A",
-        checkIn: "N/A",
-        breakTime: "N/A",
-        checkOut: "N/A",
-        hours: `${data.totalHoursWorked ?? "N/A"}h`,
-        status: "Summary",
-      },
-    ]
-  : [];
-      console.log("data",attendanceData);
+  const getStatusBadgeClass = () => {
+    if (isCheckingOut) return "status-checkedout";
+    if (partiallyCheckedOut) return "status-partial";
+    if (onBreak) return "status-break";
+    if (hasCheckedIn) return "status-working";
+    return "";
+  };
+
+  const getStatusText = () => {
+    if (isCheckingOut) return "Checked Out";
+    if (partiallyCheckedOut) return "Partially Checked Out";
+    if (onBreak) return "On Break";
+    if (hasCheckedIn) return "Working";
+    return "-";
+  };
+
   return (
-    
-      <div className="bg-white text-black rounded-xl shadow-lg p-6 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold">Today's Attendance</h2>
-            <p className="text-sm text-gray-500">{today}</p>
-          </div>
+    <div className="max-w-8xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Header */}
+      <div className="bg-[#334557] text-white p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Attendance Dashboard</h1>
+        <div className="text-sm opacity-90">{today}</div>
+      </div>
+
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-[#334557]">Today's Attendance</h2>
           <div className="flex gap-3">
             <button
-              onClick={() => handleCheckIn()}
-              disabled={isPending || hasCheckedIn}
-              className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+
+                handleCheckIn();
+              }}
+
+              // disabled={isCheckingIn || hasCheckedIn}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isCheckingIn || hasCheckedIn
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
+                } transition-colors`}
             >
-               Check In
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Check In
             </button>
-            <button className="!bg-[#F39F0B] text-white px-4 py-1 rounded-full text-sm">
-               Break
+
+            <button
+              onClick={handleBreak}
+              disabled={!hasCheckedIn || partiallyCheckedOut}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || partiallyCheckedOut
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-[#fbbf24] text-[#92400e] hover:bg-[#f7b31b]"
+                } transition-colors`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              {onBreak ? "End Break" : "Start Break"}
             </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="!bg-[#DD2428] text-white px-4 py-1 rounded-full text-sm">
-                  Check Out
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40 bg-white text-black">
-                <DropdownMenuItem onClick={() => handlePartialCheckout()}>
-                  Partially Checkout
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleCheckOut()}>
-                  Fully Checkout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+            {partiallyCheckedOut ? (
+              <button
+                onClick={handleReturnToWork}
+                className="px-4 py-2 rounded-lg flex items-center gap-2 bg-[#60a5fa] text-[#1e40af] hover:bg-[#5595e5] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                </svg>
+                Return to Work
+              </button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    disabled={!hasCheckedIn || isCheckingOut}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || isCheckingOut
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-[#f87171] text-[#991b1b] hover:bg-[#e66767]"
+                      } transition-colors`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    Check Out
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <DropdownMenuItem
+                    onClick={() => handlePartialCheckout()}
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Partial Checkout
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleCheckOut()}
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Full Checkout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
-        {/* Timeline Placeholder */}
-        <div className="bg-[#F9F9F9] h-20 rounded-md flex items-center justify-start gap-6 px-6">
-          <div className="flex flex-col items-center text-xs text-green-400">
-            <div className="w-2 h-2 rounded-full bg-green-400 mb-1"></div>
-            9:00 AM
+
+        {/* Timeline */}
+        {timelineEvents.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-3">Today's Activity Timeline</h3>
+            <div className="relative pl-6">
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-300"></div>
+              {timelineEvents.map((event, index) => (
+                <div key={index} className="relative pb-4 pl-6 last:pb-0">
+                  <div className={`absolute left-0 top-1 w-3 h-3 rounded-full ${event.type === 'checkin' ? 'bg-[#4ade80] ring-2 ring-[#4ade8040]' :
+                    event.type === 'break-start' ? 'bg-[#fbbf24] ring-2 ring-[#fbbf2440]' :
+                      event.type === 'break-end' ? 'bg-[#fbbf24] ring-2 ring-[#fbbf2440] border-2 border-white' :
+                        event.type === 'checkout' ? 'bg-[#f87171] ring-2 ring-[#f8717140]' :
+                          'bg-[#60a5fa] ring-2 ring-[#60a5fa40]'
+                    }`}></div>
+                  <div className="text-xs text-gray-500">{formatTime(event.time)}</div>
+                  <div className="text-sm font-medium text-gray-800">{event.description}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col items-center text-xs text-yellow-300">
-            <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
-            1:00 PM
-          </div>
-          <div className="flex flex-col items-center text-xs text-yellow-300">
-            <div className="w-2 h-2 rounded-full bg-yellow-300 mb-1"></div>
-            2:00 PM
-          </div>
-        </div>
+        )}
+
         {/* Attendance Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-[#F9F9F9] text-black">
+          <table className="w-full text-sm border-collapse">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="p-3">DATE</th>
-                <th className="p-3">CHECK IN</th>
-                <th className="p-3">BREAK TIME</th>
-                <th className="p-3">CHECK OUT</th>
-                <th className="p-3">TOTAL HOURS</th>
-                <th className="p-3">STATUS</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Date</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Check In</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Break Time</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Check Out</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Total Hours</th>
+                <th className="p-3 text-left text-gray-600 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-gray-400">
-                    Loading...
+                  <td colSpan={6} className="p-4 text-center text-gray-400">
+                    Loading attendance data...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-red-400">
+                  <td colSpan={6} className="p-4 text-center text-red-400">
                     Error fetching attendance summary
                   </td>
                 </tr>
               ) : attendanceData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-gray-400">
-                    No attendance data found
+                  <td colSpan={6} className="p-4 text-center text-gray-400">
+                    No attendance data available
                   </td>
                 </tr>
               ) : (
                 attendanceData.map((item, index) => (
-                  <tr key={index} className="border-t border-[#EFF4F8]">
+                  <tr key={index} className="border-t border-gray-200">
                     <td className="p-3">{item.date}</td>
                     <td className="p-3">{item.checkIn}</td>
                     <td className="p-3">{item.breakTime}</td>
                     <td className="p-3">{item.checkOut}</td>
-                    <td className="p-3">{item.hours}</td>
+                    <td className="p-3 font-medium">{item.hours}</td>
                     <td className="p-3">
-                      <span className="bg-green-200 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">
-                        {item.status}
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Complete' ? 'bg-green-100 text-green-800' :
+                        getStatusBadgeClass() === 'status-working' ? 'bg-blue-100 text-blue-800' :
+                          getStatusBadgeClass() === 'status-break' ? 'bg-yellow-100 text-yellow-800' :
+                            getStatusBadgeClass() === 'status-partial' ? 'bg-red-100 text-red-800' :
+                              getStatusBadgeClass() === 'status-checkedout' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                        }`}>
+                        {item.status === 'Complete' ? item.status : getStatusText()}
                       </span>
                     </td>
                   </tr>
@@ -244,13 +353,8 @@ console.log('new data' ,data)
           </table>
         </div>
       </div>
-    
+    </div>
   );
 };
+
 export default Attendance;
-
-
-
-
-
-
