@@ -124,7 +124,7 @@ const Attendance = () => {
         ]
       : [];
   return (
-    <div className="bg-[#1A2233] text-white mt-10 rounded-xl shadow-lg p-6 max-w-6xl mx-auto space-y-6">
+    
       <div className="bg-white text-black rounded-xl shadow-lg p-6 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -138,15 +138,15 @@ const Attendance = () => {
               disabled={isPending || hasCheckedIn}
               className="!bg-[#079669] text-white px-4 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              :heavy_plus_sign: Check In
+               Check In
             </button>
             <button className="!bg-[#F39F0B] text-white px-4 py-1 rounded-full text-sm">
-              :coffee: Break
+               Break
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="!bg-[#DD2428] text-white px-4 py-1 rounded-full text-sm">
-                  :heavy_minus_sign: Check Out
+                  Check Out
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-40 bg-white text-black">
@@ -227,7 +227,7 @@ const Attendance = () => {
           </table>
         </div>
       </div>
-    </div>
+    
   );
 };
 export default Attendance;
