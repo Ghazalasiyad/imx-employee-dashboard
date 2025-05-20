@@ -97,32 +97,49 @@ const Attendance = () => {
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
   });
-  const attendanceData =
-    data?.data?.records?.length > 0
-      ? [
-          {
-            date: data.data.records[0].date
-              ? format(new Date(data.data.records[0].date), "dd MMM yyyy")
-              : "N/A",
-            checkIn: data.data.records[0].checkInTime
-              ? format(new Date(data.data.records[0].checkInTime), "hh:mm a")
-              : "N/A",
-            breakTime: data.data.records[0].breakTime
-              ? `${format(new Date(data.data.records[0].breakTime.start), "hh:mm a")} - ${format(
-                  new Date(data.data.records[0].breakTime.end),
-                  "hh:mm a"
-                )}`
-              : "N/A",
-            checkOut: data.data.records[0].checkOutTime
-              ? format(new Date(data.data.records[0].checkOutTime), "hh:mm a")
-              : "N/A",
-            hours: data.data.records[0].totalHoursWorked
-              ? `${data.data.records[0].totalHoursWorked}h`
-              : "N/A",
-            status: "Complete",
-          },
-        ]
-      : [];
+console.log('new data' ,data)
+
+  // const attendanceData =
+  //   data?.data?.records?.length > 0
+  //     ? [
+  //         {
+  //           date: data.data.records[0].date
+  //             ? format(new Date(data.data.records[0].date), "dd MMM yyyy")
+  //             : "N/A",
+  //           checkIn: data.data.records[0].checkInTime
+  //             ? format(new Date(data.data.records[0].checkInTime), "hh:mm a")
+  //             : "N/A",
+  //           breakTime: data.data.records[0].breakTime
+  //             ? `${format(new Date(data.data.records[0].breakTime.start), "hh:mm a")} - ${format(
+  //                 new Date(data.data.records[0].breakTime.end),
+  //                 "hh:mm a"
+  //               )}`
+  //             : "N/A",
+  //           checkOut: data.data.records[0].checkOutTime
+  //             ? format(new Date(data.data.records[0].checkOutTime), "hh:mm a")
+  //             : "N/A",
+  //           hours: data.data.records[0].totalHoursWorked
+  //             ? `${data.data.records[0].totalHoursWorked}h`
+  //             : "N/A",
+  //           status: "Complete",
+  //         },
+  //       ]
+  //     : [];
+
+
+  const attendanceData = data
+  ? [
+      {
+        date: "N/A",
+        checkIn: "N/A",
+        breakTime: "N/A",
+        checkOut: "N/A",
+        hours: `${data.totalHoursWorked ?? "N/A"}h`,
+        status: "Summary",
+      },
+    ]
+  : [];
+      console.log("data",attendanceData);
   return (
     
       <div className="bg-white text-black rounded-xl shadow-lg p-6 space-y-6">

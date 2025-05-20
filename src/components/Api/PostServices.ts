@@ -1,7 +1,6 @@
 import { Instance } from "./api";
 import { loginResponse, ILeaveRequest } from "./types";
 
-// Login
 export async function login({
 
   email,
@@ -12,11 +11,7 @@ export async function login({
 }): Promise<loginResponse> {
   try {
     const response = await Instance.post(`/employee/login`, { email, password });
-
-    // Save the token and employee data to localStorage
     localStorage.setItem('isAuthenticated', 'true');
-    // localStorage.setItem('token', response.data.token);
-    // localStorage.setItem('employeeId', response.data.employee.id);
 
     return response.data;
   } catch (error: any) {
@@ -27,7 +22,6 @@ export async function login({
 }
 
 // Check-in
-
 export async function checkIn(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -73,9 +67,9 @@ export async function getAttendanceSummary(): Promise<any> {
 
   const today = new Date().toISOString().split("T")[0];
   const response = await Instance.get(
-    `/attendance/getAttendanceSummary/${employeeId}?date=${today}`
+    `/attendance/employee/${employeeId}/stats`
   );
-  return response.data;
+  return response.data.data;
 }
 
 // Add Leave Request
