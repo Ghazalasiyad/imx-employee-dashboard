@@ -56,8 +56,7 @@ const Leaves = () => {
     },
     onError: (error: any) => {
       toast.error(
-        `Failed to add Leave Request: ${
-          error.response?.data.message || error.message
+        `Failed to add Leave Request: ${error.response?.data.message || error.message
         }`,
         {
           duration: 2000,
@@ -116,83 +115,108 @@ const Leaves = () => {
 
       {/* Apply Leave Popup Form */}
       {showApplyForm && (
-        <div className="absolute top-32 left-1/2 transform -translate-x-1/2 bg-white text-black p-6 rounded-xl shadow-lg w-full max-w-md z-10">
-          <h2 className="text-xl font-semibold mb-4">Apply for Leave</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="mt-4 flex gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">From</label>
-                <DatePicker
-                  selected={
-                    formData.startDate ? new Date(formData.startDate) : null
-                  }
-                  onChange={(date) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      startDate: date?.toISOString().split("T")[0] || "",
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded px-2 py-1"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">To</label>
-                <DatePicker
-                  selected={
-                    formData.endDate ? new Date(formData.endDate) : null
-                  }
-                  onChange={(date) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      endDate: date?.toISOString().split("T")[0] || "",
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded px-2 py-1"
-                />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-[#334557] p-4 text-white">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Apply for Leave</h2>
+                <button
+                  onClick={() => setShowApplyForm(false)}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm">Reason</label>
-              <textarea
-                name="reason"
-                value={formData.reason}
-                onChange={handleChange}
-                className="w-full mt-1 px-3 py-2 border rounded-md"
-                rows={3}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm">Type</label>
-              <select
-                name="leaveType"
-                onChange={handleChange}
-                value={formData.leaveType}
-                className="w-full mt-1 px-3 py-2 border rounded-md"
-                required
-              >
-                <option value="" disabled>
-                  Select leave type
-                </option>
-                <option value="annual leave">Annual Leave</option>
-                <option value="sick leave">Sick Leave</option>
-              </select>
-            </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {/* Date Range */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <DatePicker
+                    selected={formData.startDate ? new Date(formData.startDate) : null}
+                    onChange={(date) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        startDate: date?.toISOString().split("T")[0] || "",
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#334557] focus:border-[#334557] text-gray-700"
+                    placeholderText="Select start date"
+                    dateFormat="MMMM d, yyyy"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <DatePicker
+                    selected={formData.endDate ? new Date(formData.endDate) : null}
+                    onChange={(date) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        endDate: date?.toISOString().split("T")[0] || "",
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#334557] focus:border-[#334557] text-gray-700"
+                    placeholderText="Select end date"
+                    dateFormat="MMMM d, yyyy"
+                  />
+                </div>
+              </div>
 
-            <div className="flex justify-end space-x-3">
-              <Button
-                type="button"
-                className="text-white !bg-[#2c3445]"
-                onClick={() => setShowApplyForm(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" className="!bg-[#2c3445] text-white">
-                Submit
-              </Button>
-            </div>
-          </form>
+              {/* Leave Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                <select
+                  name="leaveType"
+                  onChange={handleChange}
+                  value={formData.leaveType}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#334557] focus:border-[#334557] text-gray-700"
+                  required
+                >
+                  <option value="" disabled className="text-gray-400">Select leave type</option>
+                  <option value="annual leave" className="text-gray-700">Annual Leave</option>
+                  <option value="sick leave" className="text-gray-700">Sick Leave</option>
+                  <option value="casual leave" className="text-gray-700">Casual Leave</option>
+                </select>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                <textarea
+                  name="reason"
+                  value={formData.reason}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#334557] focus:border-[#334557] text-gray-700"
+                  rows={4}
+                  placeholder="Briefly explain the reason for leave"
+                  required
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowApplyForm(false)}
+                  className="px-5 py-2.5 border text-white border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#334557] text-white rounded-lg hover:bg-[#263445] transition-colors font-medium"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -235,13 +259,12 @@ const Leaves = () => {
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`text-white text-xs font-medium px-3 py-1 rounded-full ${
-                        leave.status === "approved"
-                          ? "bg-green-600"
-                          : leave.status === "pending"
+                      className={`text-white text-xs font-medium px-3 py-1 rounded-full ${leave.status === "approved"
+                        ? "bg-green-600"
+                        : leave.status === "pending"
                           ? "bg-yellow-500"
                           : "bg-red-500"
-                      }`}
+                        }`}
                     >
                       {leave.status}
                     </span>

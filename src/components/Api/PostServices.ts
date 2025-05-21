@@ -24,7 +24,7 @@ export async function login({
 // Check-in
 export async function checkIn(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
-  if (!employeeId) {  
+  if (!employeeId) {
     throw new Error("Employee ID not found");
   }
 
@@ -32,8 +32,31 @@ export async function checkIn(): Promise<any> {
   return response.data;
 }
 
+
+// start break
+export async function StartBreak(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const response = await Instance.post("/attendance/start-break", { employeeId });
+  return response.data;
+}
+
+// end break
+export async function endBreak(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const response = await Instance.post("/attendance/end-break", { employeeId });
+  return response.data;
+}
+
+
 // Partial Checkout
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function partialCheckout(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -45,7 +68,6 @@ export async function partialCheckout(): Promise<any> {
 }
 
 // Checkout
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function checkOut(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -58,7 +80,6 @@ export async function checkOut(): Promise<any> {
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getAttendanceSummary(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -67,7 +88,7 @@ export async function getAttendanceSummary(): Promise<any> {
 
   const today = new Date().toISOString().split("T")[0];
   const response = await Instance.get(
-    `/attendance/employee/${employeeId}/stats`
+    `/attendance/summary/${employeeId}`
   );
   return response.data.data;
 }
@@ -81,8 +102,7 @@ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
       },
     });
     return response.data;
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || error.message || "Failed to add Leave Request"

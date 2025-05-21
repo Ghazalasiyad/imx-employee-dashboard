@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { StartBreak, endBreak } from "@/components/Api/PostServices";
 import {
   checkIn,
   checkOut,
@@ -19,8 +20,9 @@ const Attendance = () => {
   const [today, setToday] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [onBreak, setOnBreak] = useState(false);
   const [partiallyCheckedOut, setPartiallyCheckedOut] = useState(false);
+  const [onBreak, setOnBreak] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [timelineEvents, setTimelineEvents] = useState<Array<{
     type: string;
     time: Date;
@@ -83,6 +85,24 @@ const Attendance = () => {
     },
   });
 
+
+  const handleBreakToggle = async () => {
+    setLoading(true);
+    try {
+      if (onBreak) {
+        await endBreak();
+        setOnBreak(false);
+      } else {
+        await StartBreak();
+        setOnBreak(true);
+      }
+    } catch (error) {
+      console.error("Break API Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const {
     mutate: handlePartialCheckout,
     isPending: isPartialCheckingOut,
@@ -129,11 +149,9 @@ const Attendance = () => {
 
   const handleBreak = () => {
     if (!onBreak) {
-      // Start break
       setOnBreak(true);
       addTimelineEvent('break-start', 'Break started');
     } else {
-      // End break
       setOnBreak(false);
       addTimelineEvent('break-end', 'Break ended');
     }
@@ -144,9 +162,10 @@ const Attendance = () => {
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
   });
+  console.log('new data', data)
   const attendanceData = useMemo(() => {
-    if (data?.data?.records?.length > 0) {
-      const record = data.data.records[0];
+    if (data?.length > 0) {
+      const record = data[0]; 
       return [{
         date: record.date ? format(new Date(record.date), "dd MMM yyyy") : "N/A",
         checkIn: record.checkInTime ? format(new Date(record.checkInTime), "hh:mm a") : "N/A",
@@ -162,6 +181,7 @@ const Attendance = () => {
   }, [data]);
 
 
+  console.log("data", attendanceData)
   const getStatusBadgeClass = () => {
     if (isCheckingOut) return "status-checkedout";
     if (partiallyCheckedOut) return "status-partial";
@@ -180,9 +200,8 @@ const Attendance = () => {
 
   return (
     <div className="max-w-8xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Header */}
-      <div className="bg-[#334557] text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Attendance Dashboard</h1>
+      <div className="bg-[#334557] text-white p-3 flex justify-between items-center">
+        <h2 className="text-4xl font-semibold">Attendance Dashboard</h2>
         <div className="text-sm opacity-90">{today}</div>
       </div>
 
@@ -192,13 +211,11 @@ const Attendance = () => {
           <div className="flex gap-3">
             <button
               onClick={() => {
-
                 handleCheckIn();
-              }}
 
-              // disabled={isCheckingIn || hasCheckedIn}
+              }}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isCheckingIn || hasCheckedIn
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                ? "bg-gray-200 text-gray-300 cursor-not-allowed"
                 : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
                 } transition-colors`}
             >
@@ -207,19 +224,32 @@ const Attendance = () => {
               </svg>
               Check In
             </button>
-
             <button
-              onClick={handleBreak}
-              disabled={!hasCheckedIn || partiallyCheckedOut}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || partiallyCheckedOut
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : "bg-[#fbbf24] text-[#92400e] hover:bg-[#f7b31b]"
-                } transition-colors`}
+              onClick={handleBreakToggle}
+              disabled={!hasCheckedIn || isCheckingOut || partiallyCheckedOut || loading}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${!hasCheckedIn || isCheckingOut || partiallyCheckedOut
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : onBreak
+                    ? "bg-[#f59e0b] text-[#f1ab27] hover:bg-[#d97706] shadow-md"
+                    : "bg-[#fbbf24] text-[#f1ab27] hover:bg-[#f59e0b] shadow-md"
+                }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              {onBreak ? "End Break" : "Start Break"}
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  {onBreak ? "End Break" : "Start Break"}
+                </>
+              )}
             </button>
 
             {partiallyCheckedOut ? (
@@ -239,7 +269,7 @@ const Attendance = () => {
                     disabled={!hasCheckedIn || isCheckingOut}
                     className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || isCheckingOut
                       ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-[#f87171] text-[#991b1b] hover:bg-[#e66767]"
+                      : "bg-[#f87171] text-[#ef4444] hover:bg-[#e66767]"
                       } transition-colors`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,7 +303,6 @@ const Attendance = () => {
           </div>
         </div>
 
-        {/* Timeline */}
         {timelineEvents.length > 0 && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="text-sm font-medium text-gray-600 mb-3">Today's Activity Timeline</h3>
@@ -295,7 +324,6 @@ const Attendance = () => {
           </div>
         )}
 
-        {/* Attendance Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead className="bg-gray-50">
@@ -305,7 +333,6 @@ const Attendance = () => {
                 <th className="p-3 text-left text-gray-600 font-medium">Break Time</th>
                 <th className="p-3 text-left text-gray-600 font-medium">Check Out</th>
                 <th className="p-3 text-left text-gray-600 font-medium">Total Hours</th>
-                <th className="p-3 text-left text-gray-600 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -335,17 +362,6 @@ const Attendance = () => {
                     <td className="p-3">{item.breakTime}</td>
                     <td className="p-3">{item.checkOut}</td>
                     <td className="p-3 font-medium">{item.hours}</td>
-                    <td className="p-3">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Complete' ? 'bg-green-100 text-green-800' :
-                        getStatusBadgeClass() === 'status-working' ? 'bg-blue-100 text-blue-800' :
-                          getStatusBadgeClass() === 'status-break' ? 'bg-yellow-100 text-yellow-800' :
-                            getStatusBadgeClass() === 'status-partial' ? 'bg-red-100 text-red-800' :
-                              getStatusBadgeClass() === 'status-checkedout' ? 'bg-purple-100 text-purple-800' :
-                                'bg-gray-100 text-gray-800'
-                        }`}>
-                        {item.status === 'Complete' ? item.status : getStatusText()}
-                      </span>
-                    </td>
                   </tr>
                 ))
               )}
