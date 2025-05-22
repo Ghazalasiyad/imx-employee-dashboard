@@ -1,17 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { StartBreak, endBreak } from "@/components/Api/PostServices";
 import {
   checkIn,
   checkOut,
   getAttendanceSummary,
-  partialCheckout,
 } from "@/components/Api/PostServices";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -104,26 +97,6 @@ const Attendance = () => {
   };
 
   const {
-    mutate: handlePartialCheckout,
-    isPending: isPartialCheckingOut,
-  } = useMutation({
-    mutationFn: () => partialCheckout(),
-    onSuccess: () => {
-      setPartiallyCheckedOut(true);
-      addTimelineEvent('checkout', 'Partially checked out');
-      toast.success("Partial checkout successful!");
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Something went wrong during partial checkout!";
-      toast.error(message);
-    },
-  });
-
-  const {
     mutate: handleCheckOut,
     isPending: isCheckingOut,
   } = useMutation({
@@ -142,10 +115,6 @@ const Attendance = () => {
     },
   });
 
-  const handleReturnToWork = () => {
-    setPartiallyCheckedOut(false);
-    addTimelineEvent('return', 'Returned to work');
-  };
 
   const handleBreak = () => {
     if (!onBreak) {
@@ -165,7 +134,7 @@ const Attendance = () => {
   console.log('new data', data)
   const attendanceData = useMemo(() => {
     if (data?.length > 0) {
-      const record = data[0]; 
+      const record = data[0];
       return [{
         date: record.date ? format(new Date(record.date), "dd MMM yyyy") : "N/A",
         checkIn: record.checkInTime ? format(new Date(record.checkInTime), "hh:mm a") : "N/A",
@@ -200,7 +169,7 @@ const Attendance = () => {
 
   return (
     <div className="max-w-8xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="bg-[#334557] text-white p-3 flex justify-between items-center">
+      <div className="bg-[#f9f9f9] text-[#334557] p-3 flex justify-between items-center">
         <h2 className="text-4xl font-semibold">Attendance Dashboard</h2>
         <div className="text-sm opacity-90">{today}</div>
       </div>
@@ -217,7 +186,7 @@ const Attendance = () => {
               className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isCheckingIn || hasCheckedIn
                 ? "bg-gray-200 text-gray-300 cursor-not-allowed"
                 : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
-                } transition-colors`}
+                } `}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -226,12 +195,12 @@ const Attendance = () => {
             </button>
             <button
               onClick={handleBreakToggle}
-              disabled={!hasCheckedIn || isCheckingOut || partiallyCheckedOut || loading}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${!hasCheckedIn || isCheckingOut || partiallyCheckedOut
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : onBreak
-                    ? "bg-[#f59e0b] text-[#f1ab27] hover:bg-[#d97706] shadow-md"
-                    : "bg-[#fbbf24] text-[#f1ab27] hover:bg-[#f59e0b] shadow-md"
+              disabled={!hasCheckedIn || loading}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${!hasCheckedIn
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : onBreak
+                  ? "bg-[#f59e0b] text-[#f1ab27] hover:bg-[#d97706] shadow-md"
+                  : "bg-[#fbbf24] text-[#f1ab27] hover:bg-[#f59e0b] shadow-md"
                 }`}
             >
               {loading ? (
@@ -251,55 +220,6 @@ const Attendance = () => {
                 </>
               )}
             </button>
-
-            {partiallyCheckedOut ? (
-              <button
-                onClick={handleReturnToWork}
-                className="px-4 py-2 rounded-lg flex items-center gap-2 bg-[#60a5fa] text-[#1e40af] hover:bg-[#5595e5] transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
-                </svg>
-                Return to Work
-              </button>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    disabled={!hasCheckedIn || isCheckingOut}
-                    className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || isCheckingOut
-                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-[#f87171] text-[#ef4444] hover:bg-[#e66767]"
-                      } transition-colors`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    Check Out
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  <DropdownMenuItem
-                    onClick={() => handlePartialCheckout()}
-                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                    Partial Checkout
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleCheckOut()}
-                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Full Checkout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </div>
 
