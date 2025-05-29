@@ -13,7 +13,10 @@ const Attendance = () => {
   const [today, setToday] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [partiallyCheckedOut, setPartiallyCheckedOut] = useState(false);
+  const [hasCheckedOut, setHasCheckedOut] = useState(false);
+  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
+  const [breakEndTime, setBreakEndTime] = useState<Date | null>(null);
+  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null);
   const [onBreak, setOnBreak] = useState(false);
   const [loading, setLoading] = useState(false);
   const [timelineEvents, setTimelineEvents] = useState<Array<{
@@ -58,15 +61,25 @@ const Attendance = () => {
   };
 
   const {
-    mutate: handleCheckIn,
-    isPending: isCheckingIn,
+    mutate: handleCheckInOut,
+    isPending: isProcessingCheck,
   } = useMutation({
-    mutationFn: () => checkIn(),
-    onSuccess: () => {
-      setHasCheckedIn(true);
-      localStorage.setItem("hasCheckedIn", "true");
-      addTimelineEvent('checkin', 'Checked in');
-      toast.success("Checked in successfully!");
+    mutationFn: () => hasCheckedIn ? checkOut() : checkIn(),
+    onSuccess: (data) => {
+      if (hasCheckedIn) {
+        const outTime = new Date();
+        setCheckOutTime(outTime);
+        setHasCheckedIn(false);
+        setHasCheckedOut(true);
+        localStorage.removeItem("hasCheckedIn");
+        addTimelineEvent('checkout', `Checked out at ${formatTime(outTime)}`);
+        toast.success("Checked out successfully!");
+      } else {
+        setHasCheckedIn(true);
+        localStorage.setItem("hasCheckedIn", "true");
+        addTimelineEvent('checkin', `Checked in at ${formatTime(new Date())}`);
+        toast.success("Checked in successfully!");
+      }
     },
     onError: (error: any) => {
       const message =
@@ -84,45 +97,22 @@ const Attendance = () => {
     try {
       if (onBreak) {
         await endBreak();
+        const endTime = new Date();
+        setBreakEndTime(endTime);
         setOnBreak(false);
+        addTimelineEvent('break-end', `Break ended at ${formatTime(endTime)}`);
       } else {
         await StartBreak();
+        const startTime = new Date();
+        setBreakStartTime(startTime);
         setOnBreak(true);
+        addTimelineEvent('break-start', `Break started at ${formatTime(startTime)}`);
       }
     } catch (error) {
       console.error("Break API Error:", error);
+      toast.error("Failed to update break status");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const {
-    mutate: handleCheckOut,
-    isPending: isCheckingOut,
-  } = useMutation({
-    mutationFn: () => checkOut(),
-    onSuccess: () => {
-      addTimelineEvent('checkout', 'Fully checked out');
-      toast.success("You have fully checked out!");
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Something went wrong during full checkout!";
-      toast.error(message);
-    },
-  });
-
-
-  const handleBreak = () => {
-    if (!onBreak) {
-      setOnBreak(true);
-      addTimelineEvent('break-start', 'Break started');
-    } else {
-      setOnBreak(false);
-      addTimelineEvent('break-end', 'Break ended');
     }
   };
 
@@ -131,37 +121,60 @@ const Attendance = () => {
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
   });
-  console.log('new data', data)
+
   const attendanceData = useMemo(() => {
     if (data?.length > 0) {
       const record = data[0];
+      const breakText = record.breakStartTime
+        ? `${format(new Date(record.breakStartTime), "hh:mm a")} - ${record.breakEndTime
+          ? format(new Date(record.breakEndTime), "hh:mm a")
+          : "Ongoing"
+        }`
+        : breakStartTime
+          ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"
+          }`
+          : "N/A";
+
       return [{
-        date: record.date ? format(new Date(record.date), "dd MMM yyyy") : "N/A",
-        checkIn: record.checkInTime ? format(new Date(record.checkInTime), "hh:mm a") : "N/A",
-        breakTime: record.breakTime
-          ? `${format(new Date(record.breakTime.start), "hh:mm a")} - ${format(new Date(record.breakTime.end), "hh:mm a")}`
+        date: format(new Date(), "dd MMM yyyy"),
+        checkIn: record.checkInTime
+          ? format(new Date(record.checkInTime), "hh:mm a")
           : "N/A",
-        checkOut: record.checkOutTime ? format(new Date(record.checkOutTime), "hh:mm a") : "N/A",
+        breakTime: breakText,
+        checkOut: record.checkOutTime
+          ? format(new Date(record.checkOutTime), "hh:mm a")
+          : checkOutTime
+            ? format(checkOutTime, "hh:mm a")
+            : "N/A",
         hours: record.totalHoursWorked ? `${record.totalHoursWorked}h` : "N/A",
         status: "Complete",
       }];
     }
-    return [];
-  }, [data]);
 
+    const breakText = breakStartTime
+      ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"
+      }`
+      : "N/A";
 
-  console.log("data", attendanceData)
+    return [{
+      date: format(new Date(), "dd MMM yyyy"),
+      checkIn: hasCheckedIn ? format(new Date(), "hh:mm a") : "N/A",
+      breakTime: breakText,
+      checkOut: checkOutTime ? format(checkOutTime, "hh:mm a") : "N/A",
+      hours: "N/A",
+      status: hasCheckedOut ? "Complete" : hasCheckedIn ? "In Progress" : "Not Started",
+    }];
+  }, [data, hasCheckedIn, hasCheckedOut, breakStartTime, breakEndTime, checkOutTime]);
+
   const getStatusBadgeClass = () => {
-    if (isCheckingOut) return "status-checkedout";
-    if (partiallyCheckedOut) return "status-partial";
+    if (hasCheckedOut) return "status-checkedout";
     if (onBreak) return "status-break";
     if (hasCheckedIn) return "status-working";
     return "";
   };
 
   const getStatusText = () => {
-    if (isCheckingOut) return "Checked Out";
-    if (partiallyCheckedOut) return "Partially Checked Out";
+    if (hasCheckedOut) return "Checked Out";
     if (onBreak) return "On Break";
     if (hasCheckedIn) return "Working";
     return "-";
@@ -179,28 +192,32 @@ const Attendance = () => {
           <h2 className="text-lg font-semibold text-[#334557]">Today's Attendance</h2>
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                handleCheckIn();
-
-              }}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isCheckingIn || hasCheckedIn
-                ? "bg-gray-200 text-gray-300 cursor-not-allowed"
-                : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
-                } `}
+              onClick={() => handleCheckInOut()}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isProcessingCheck
+                ? "bg-[#334557] text-white cursor-not-allowed"
+                : hasCheckedIn
+                  ? "bg-[#f87171] text-white hover:bg-[#ef4444]"
+                  : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
+                }`}
+              disabled={isProcessingCheck}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              Check In
+              {isProcessingCheck
+                ? "Processing..."
+                : hasCheckedIn
+                  ? "Check Out"
+                  : "Check In"}
             </button>
             <button
               onClick={handleBreakToggle}
-              disabled={!hasCheckedIn || loading}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${!hasCheckedIn
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              disabled={!hasCheckedIn || loading || hasCheckedOut}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || hasCheckedOut
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : onBreak
-                  ? "bg-[#f59e0b] text-[#f1ab27] hover:bg-[#d97706] shadow-md"
-                  : "bg-[#fbbf24] text-[#f1ab27] hover:bg-[#f59e0b] shadow-md"
+                  ? "bg-[#334557] text-[#f1ab27]"
+                  : "bg-[#334557] text-white"
                 }`}
             >
               {loading ? (
@@ -256,35 +273,15 @@ const Attendance = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-400">
-                    Loading attendance data...
-                  </td>
+              {attendanceData.map((item, index) => (
+                <tr key={index} className="border-t border-gray-200">
+                  <td className="p-3">{item.date}</td>
+                  <td className="p-3">{item.checkIn}</td>
+                  <td className="p-3">{item.breakTime}</td>
+                  <td className="p-3">{item.checkOut}</td>
+                  <td className="p-3 font-medium">{item.hours}</td>
                 </tr>
-              ) : isError ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-red-400">
-                    Error fetching attendance summary
-                  </td>
-                </tr>
-              ) : attendanceData.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-400">
-                    No attendance data available
-                  </td>
-                </tr>
-              ) : (
-                attendanceData.map((item, index) => (
-                  <tr key={index} className="border-t border-gray-200">
-                    <td className="p-3">{item.date}</td>
-                    <td className="p-3">{item.checkIn}</td>
-                    <td className="p-3">{item.breakTime}</td>
-                    <td className="p-3">{item.checkOut}</td>
-                    <td className="p-3 font-medium">{item.hours}</td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>

@@ -79,7 +79,6 @@ export async function checkOut(): Promise<any> {
 }
 
 
-
 export async function getAttendanceSummary(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -93,7 +92,6 @@ export async function getAttendanceSummary(): Promise<any> {
   return response.data.data;
 }
 
-// Add Leave Request
 export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
   try {
     const response = await Instance.post("/leaveRequest/applyLeave", newLeave, {
@@ -110,7 +108,6 @@ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
   }
 }
 
-// Get Leaves
 export async function getLeaves(): Promise<ILeaveRequest[]> {
   const response = await Instance.get("/leaveRequest/myLeaves");
   return response.data.data;

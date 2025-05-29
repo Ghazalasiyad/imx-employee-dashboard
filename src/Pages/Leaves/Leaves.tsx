@@ -79,9 +79,8 @@ const Leaves = () => {
   };
 
   return (
-    <div className="w-full px-6 py-6 space-y-6 min-h-screen text-white relative">
+    <div className="w-full px-2 py-6 space-y-6 min-h-screen text-white relative">
       <div className="flex flex-wrap gap-6">
-        {/* Cards */}
         <div className="bg-white text-black rounded-xl px-6 py-4 w-64 ">
           <p className="text-sm text-black mb-1">Annual Leave</p>
           <p className="text-3xl font-semibold">15</p>
@@ -106,18 +105,16 @@ const Leaves = () => {
 
       <div className="flex justify-end">
         <Button
-          className="!bg-[#26344e] hover:bg-blue-700 text-white"
+          className="!bg-[#334557] !py-5 hover:bg-blue-700 text-white"
           onClick={() => setShowApplyForm(true)}
         >
           + Apply for Leave
         </Button>
       </div>
 
-      {/* Apply Leave Popup Form */}
       {showApplyForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            {/* Header */}
             <div className="bg-[#334557] p-4 text-white">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Apply for Leave</h2>
@@ -132,9 +129,7 @@ const Leaves = () => {
               </div>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              {/* Date Range */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -168,7 +163,6 @@ const Leaves = () => {
                 </div>
               </div>
 
-              {/* Leave Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
                 <select
@@ -185,7 +179,6 @@ const Leaves = () => {
                 </select>
               </div>
 
-              {/* Reason */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
                 <textarea
@@ -199,7 +192,6 @@ const Leaves = () => {
                 />
               </div>
 
-              {/* Form Actions */}
               <div className="flex justify-end space-x-3 pt-2">
                 <button
                   type="button"
@@ -220,7 +212,6 @@ const Leaves = () => {
         </div>
       )}
 
-      {/* Leave History Section */}
       <div className="bg-white rounded-xl p-6 mt-8 overflow-x-auto">
         <h2 className="text-lg font-semibold mb-4 text-black">Leave History</h2>
         <table className="w-full text-sm text-left text-white">
@@ -247,7 +238,6 @@ const Leaves = () => {
                 </td>
               </tr>
             ) : leaves && leaves.length > 0 ? (
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               leaves.map((leave: any, index: number) => (
                 <tr key={index} className="border-b border-[#f4f7fa] text-black">
                   <td className="py-3 px-4 capitalize">{leave.leaveType}</td>
@@ -290,17 +280,16 @@ const Leaves = () => {
         </table>
       </div>
 
-      {/* Leave Details Popup */}
       {selectedLeave && (
         <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-20">
           <div className="bg-white text-black p-6 rounded-lg w-full max-w-md">
             <h3 className="text-lg font-semibold mb-2">Leave Details</h3>
-            <p><strong>Type:</strong> {selectedLeave.leaveType}</p>
-            <p><strong>From:</strong> {selectedLeave.startDate}</p>
-            <p><strong>To:</strong> {selectedLeave.endDate}</p>
-            <p><strong>Days:</strong> {calculateDays(selectedLeave.startDate, selectedLeave.endDate)}</p>
-            <p><strong>Reason:</strong> {selectedLeave.reason}</p>
-            <p><strong>Status:</strong> {selectedLeave.status}</p>
+            <p><strong>Type:</strong> {selectedLeave}</p>
+            <p><strong>From:</strong> {selectedLeave}</p>
+            <p><strong>To:</strong> {selectedLeave}</p>
+            <p><strong>Days:</strong> {calculateDays(selectedLeave, selectedLeave)}</p>
+            <p><strong>Reason:</strong> {selectedLeave}</p>
+            <p><strong>Status:</strong> {selectedLeave}</p>
             <div className="flex justify-end mt-4">
               <Button onClick={closePopup} className="!bg-[#2c3445] text-white">Close</Button>
             </div>

@@ -13,7 +13,7 @@ const financeData = [
     description: 'Web App Payment',
     status: 'Pending',
   },
-  
+
 ];
 
 const Finance = () => {
@@ -38,11 +38,10 @@ const Finance = () => {
                 <td className="py-2 px-4">{entry.description}</td>
                 <td className="py-2 px-4">
                   <span
-                    className={`px-2 py-1 rounded text-sm font-medium ${
-                      entry.status === 'Received'
-                        ? 'bg-green-600'
-                        : 'bg-yellow-500 text-black'
-                    }`}
+                    className={`px-2 py-1 rounded text-sm font-medium ${entry.status === 'Received'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-yellow-500 text-white'
+                      }`}
                   >
                     {entry.status}
                   </span>

@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react';
 
-const quotes = [
-  "Believe you can and you're halfway there.",
-  "Success is not final, failure is not fatal: It is the courage to continue that counts.",
-  "Push yourself, because no one else is going to do it for you.",
-  "Great things never come from comfort zones.",
-  "Dream it. Wish it. Do it.",
-];
-
 const months = [
   'January', 'February', 'March', 'April',
   'May', 'June', 'July', 'August',
@@ -33,15 +25,6 @@ const Dashboard = () => {
       minute: '2-digit'
     }));
 
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    setQuote(quotes[randomIndex]);
-
-    const interval = setInterval(() => {
-      const nextIndex = Math.floor(Math.random() * quotes.length);
-      setQuote(quotes[nextIndex]);
-    }, 10000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -49,7 +32,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8 h-auto relative text-[#334557]">
+    <div className="p-2 md:p-6 lg:p-2 space-y-6 md:space-y-8 h-auto relative text-[#334557]">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard Overview</h1>
@@ -59,15 +42,11 @@ const Dashboard = () => {
         </div>
 
         <div className="flex flex-col-reverse md:flex-row gap-4 md:items-center">
-          <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-[#e2e8f0] w-full md:w-96 transition-all duration-500">
-            <p className="text-sm italic text-gray-700">"{quote}"</p>
-          </div>
-
-          <div className="w-full md:w-auto">
+          <div className="relative w-full md:w-auto">
             <select
               value={selectedMonth}
               onChange={handleMonthChange}
-              className="bg-[#334557] text-white px-4 py-2 rounded-lg shadow-md w-full md:w-48 text-sm"
+              className="appearance-none bg-[#334557] text-white px-4 py-2 pr-10 rounded-lg shadow-md w-full md:w-48 text-sm"
             >
               <option value="" disabled className="text-gray-300">
                 Select Month
@@ -78,7 +57,20 @@ const Dashboard = () => {
                 </option>
               ))}
             </select>
+
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+              <svg
+                className="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
+
         </div>
       </div>
 
@@ -168,7 +160,7 @@ const Dashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
           </div>
-          <span className="text-sm font-medium text-white"> Quick Check-in</span>
+          <span className="text-sm font-medium text-[#334557]"> Quick Check-in</span>
         </button>
         <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
           <div className="bg-[#f59e0b] bg-opacity-10 p-2 rounded-lg">
@@ -176,7 +168,7 @@ const Dashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <span className="text-sm font-medium text-white">Start Break</span>
+          <span className="text-sm font-medium text-[#334557]">Start Break</span>
         </button>
         <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
           <div className="bg-[#ef4444] bg-opacity-10 p-2 rounded-lg">
@@ -184,7 +176,7 @@ const Dashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
           </div>
-          <span className="text-sm font-medium text-white">Check Out</span>
+          <span className="text-sm font-medium text-[#334557]">Check Out</span>
         </button>
         <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
           <div className="bg-[#3b82f6] bg-opacity-10 p-2 rounded-lg">
@@ -192,7 +184,7 @@ const Dashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
             </svg>
           </div>
-          <span className="text-sm font-medium text-white">Request Leave</span>
+          <span className="text-sm font-medium text-[#334557]">Request Leave</span>
         </button>
       </div>
     </div>
