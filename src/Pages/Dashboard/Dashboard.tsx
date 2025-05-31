@@ -1,194 +1,514 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from "react"
+import {
+  Clock,
+  Calendar,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  Timer,
+  BarChart3,
+  Play,
+  Pause,
+  Square,
+  Coffee,
+  Sun,
+  Cloud,
+  CloudRain,
+  Zap,
+  Target,
+  Award,
+  Activity,
+} from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 
 const months = [
-  'January', 'February', 'March', 'April',
-  'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December',
-];
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]
+
+const weatherIcons = {
+  sunny: Sun,
+  cloudy: Cloud,
+  rainy: CloudRain,
+}
+
+const productivityTips = [
+  "Take a 5-minute break every hour to stay focused",
+  "Try the Pomodoro Technique: 25 min work, 5 min break",
+  "Stay hydrated - drink water regularly",
+  "Good posture improves productivity and health",
+  "Natural light helps maintain energy levels",
+]
+
+const recentActivities = [
+  { time: "2 min ago", action: "Completed task review", type: "success" },
+  { time: "15 min ago", action: "Started break", type: "warning" },
+  { time: "45 min ago", action: "Checked in", type: "info" },
+  { time: "1 hour ago", action: "Updated project status", type: "success" },
+]
 
 const Dashboard = () => {
-  const [currentDate, setCurrentDate] = useState('');
-  const [checkInTime, setCheckInTime] = useState('');
-  const [quote, setQuote] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [selectedMonth, setSelectedMonth] = useState("")
+  const [status, setStatus] = useState<"idle" | "checked-in" | "on-break" | "checked-out">("checked-in")
+  const [isBreakActive, setIsBreakActive] = useState(false)
+  const [workSeconds, setWorkSeconds] = useState(31523)
+  const [breakSeconds, setBreakSeconds] = useState(942)
+  const [isTimerRunning, setIsTimerRunning] = useState(true)
+  const [currentTip, setCurrentTip] = useState(0)
+  const [weather] = useState({ temp: 72, condition: "sunny" as keyof typeof weatherIcons })
 
   useEffect(() => {
-    const now = new Date();
-    setCurrentDate(now.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }));
-    setCheckInTime(now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }));
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-  }, []);
+  useEffect(() => {
+    if (!isTimerRunning) return
 
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedMonth(e.target.value);
-  };
+    const timer = setInterval(() => {
+      if (status === "checked-in" && !isBreakActive) {
+        setWorkSeconds((prev) => prev + 1)
+      } else if (isBreakActive) {
+        setBreakSeconds((prev) => prev + 1)
+      }
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [isTimerRunning, status, isBreakActive])
+
+  useEffect(() => {
+    const tipTimer = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % productivityTips.length)
+    }, 10000)
+
+    return () => clearInterval(tipTimer)
+  }, [])
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
+
+  const formatTimeShort = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
+  }
+
+  const formatCurrentTime = (date: Date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour12: true,
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+  }
+
+  const formatCurrentDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  }
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "checked-in":
+        return { color: "bg-emerald-500", text: "Active", badge: "default" }
+      case "on-break":
+        return { color: "bg-amber-500", text: "On Break", badge: "secondary" }
+      case "checked-out":
+        return { color: "bg-slate-400", text: "Checked Out", badge: "outline" }
+      default:
+        return { color: "bg-slate-300", text: "Not Checked In", badge: "outline" }
+    }
+  }
+
+  const statusConfig = getStatusConfig(status)
+  const workProgress = Math.min((workSeconds / (8 * 3600)) * 100, 100)
+  const breakProgress = Math.min((breakSeconds / (15 * 60)) * 100, 100)
+  const WeatherIcon = weatherIcons[weather.condition]
+
+  const handleStartBreak = () => {
+    setIsBreakActive(true)
+    setStatus("on-break")
+  }
+
+  const handleEndBreak = () => {
+    setIsBreakActive(false)
+    setStatus("checked-in")
+  }
+
+  const handleToggleTimer = () => {
+    setIsTimerRunning(!isTimerRunning)
+  }
+
+  const handleCheckOut = () => {
+    setStatus("checked-out")
+    setIsTimerRunning(false)
+  }
 
   return (
-    <div className="p-2 md:p-6 lg:p-2 space-y-6 md:space-y-8 h-auto relative text-[#334557]">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard Overview</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Dashboard Overview
+            </h1>
+            <div className="flex items-center gap-4 text-slate-600">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <p className="text-sm font-medium">{formatCurrentDate(currentTime)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <WeatherIcon className="w-4 h-4" />
+                <span className="text-sm font-medium">{weather.temp}°F</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold font-mono">{formatCurrentTime(currentTime)}</div>
+                  <div className="text-xs opacity-90">Live Time</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center gap-3">
+              <Badge variant={statusConfig.badge as any} className="px-3 py-1">
+                <div className={`w-2 h-2 rounded-full ${statusConfig.color} mr-2 animate-pulse`}></div>
+                {statusConfig.text}
+              </Badge>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col-reverse md:flex-row gap-4 md:items-center">
-          <div className="relative w-full md:w-auto">
-            <select
-              value={selectedMonth}
-              onChange={handleMonthChange}
-              className="appearance-none bg-[#334557] text-white px-4 py-2 pr-10 rounded-lg shadow-md w-full md:w-48 text-sm"
-            >
-              <option value="" disabled className="text-gray-300">
-                Select Month
-              </option>
-              {months.map((month) => (
-                <option key={month} value={month} className="bg-white text-[#334557]">
-                  {month}
-                </option>
-              ))}
-            </select>
-
-            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={handleToggleTimer}
+                variant={isTimerRunning ? "default" : "link"}
+                className="flex items-center gap-2"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+                {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isTimerRunning ? "Pause" : "Resume"}
+              </Button>
+
+              {!isBreakActive ? (
+                <Button
+                  onClick={handleStartBreak}
+                  className="flex items-center gap-2"
+                  disabled={status !== "checked-in"}
+                >
+                  <Coffee className="w-4 h-4" />
+                  Start Break
+                </Button>
+              ) : (
+                <Button onClick={handleEndBreak} className="flex items-center gap-2">
+                  <Square className="w-4 h-4" />
+                  End Break
+                </Button>
+              )}
+
+              <Button
+                onClick={handleCheckOut}
+                className="flex items-center gap-2"
+                disabled={status === "checked-out"}
+              >
+                <Square className="w-4 h-4" />
+                Check Out
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2">
+            <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm h-full">
+              <CardContent className="p-8">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-8 h-full">
+                  <div className="relative">
+                    <div className="relative w-48 h-48">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="42"
+                          fill="none"
+                          stroke="url(#workGradient)"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                          strokeDasharray={`${(264 * workProgress) / 100} 264`}
+                          className="transition-all duration-1000 ease-out"
+                        />
+                        {isBreakActive && (
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="32"
+                            fill="none"
+                            stroke="url(#breakGradient)"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            strokeDasharray={`${(201 * breakProgress) / 100} 201`}
+                            className="transition-all duration-1000 ease-out"
+                          />
+                        )}
+
+                        <defs>
+                          <linearGradient id="workGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#1d4ed8" />
+                          </linearGradient>
+                          <linearGradient id="breakGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#f59e0b" />
+                            <stop offset="100%" stopColor="#d97706" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-slate-900 mb-1 font-mono">
+                            {formatTime(workSeconds)}
+                          </div>
+                          <div className="text-sm text-slate-500 font-medium">Total Time</div>
+                          {isBreakActive && (
+                            <div className="text-xs text-amber-600 mt-2 font-medium">
+                              Break: {formatTime(breakSeconds)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-6">Today's Session</h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-blue-500 rounded-lg">
+                              <Clock className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Work Time</span>
+                          </div>
+                          <div className="text-2xl font-bold text-slate-900">{formatTimeShort(workSeconds)}</div>
+                          <div className="text-xs text-slate-500">of 8h target</div>
+                          <Progress value={workProgress} className="mt-2 h-2" />
+                        </div>
+
+                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-amber-500 rounded-lg">
+                              <Timer className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Break Time</span>
+                          </div>
+                          <div className="text-2xl font-bold text-slate-900">{formatTimeShort(breakSeconds)}</div>
+                          <div className="text-xs text-slate-500">total breaks</div>
+                          <Progress value={breakProgress} className="mt-2 h-2" />
+                        </div>
+
+                        <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-100">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-emerald-500 rounded-lg">
+                              <Target className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Progress</span>
+                          </div>
+                          <div className="text-2xl font-bold text-slate-900">{Math.round(workProgress)}%</div>
+                          <div className="text-xs text-slate-500">daily target</div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-xl border border-purple-100">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-purple-500 rounded-lg">
+                              <Zap className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Efficiency</span>
+                          </div>
+                          <div className="text-2xl font-bold text-slate-900">94%</div>
+                          <div className="text-xs text-slate-500">productivity score</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-        </div>
-      </div>
+          <div className="space-y-6">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+                  <Award className="w-5 h-5" />
+                  Productivity Tip
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-emerald-700 leading-relaxed">{productivityTips[currentTip]}</p>
+                <div className="flex justify-center mt-3">
+                  <div className="flex gap-1">
+                    {productivityTips.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`w-2 h-2 rounded-full transition-colors ${index === currentTip ? "bg-emerald-500" : "bg-emerald-200"
+                          }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white shadow-sm rounded-xl p-5 border border-[#e2e8f0] flex flex-col">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-[#f0f4f8] p-2 rounded-lg">
-              <svg className="w-5 h-5 text-[#334557]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500">Current Date</h3>
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentActivities.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 ${activity.type === "success"
+                          ? "bg-green-500"
+                          : activity.type === "warning"
+                            ? "bg-amber-500"
+                            : "bg-blue-500"
+                          }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-slate-900 font-medium">{activity.action}</p>
+                        <p className="text-xs text-slate-500">{activity.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <p className="text-xl font-semibold">{currentDate}</p>
         </div>
 
-        <div className="bg-white shadow-sm rounded-xl p-5 border border-[#e2e8f0] flex flex-col">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-[#f0f4f8] p-2 rounded-lg">
-              <svg className="w-5 h-5 text-[#334557]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500">Check-in Time</h3>
-          </div>
-          <p className="text-xl font-semibold">{checkInTime}</p>
-        </div>
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-slate-100">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Monthly Attendance Summary
+                {selectedMonth && (
+                  <Badge variant="outline" className="ml-2">
+                    {selectedMonth}
+                  </Badge>
+                )}
+              </CardTitle>
 
-        <div className="bg-white shadow-sm rounded-xl p-5 border border-[#e2e8f0] flex flex-col">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-[#f0f4f8] p-2 rounded-lg">
-              <svg className="w-5 h-5 text-[#334557]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-full md:w-48 bg-white border-slate-200">
+                  <SelectValue placeholder="Select Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month} value={month}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <h3 className="text-sm font-medium text-gray-500">Quick Stats</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Presents</p>
-              <p className="text-lg font-semibold">--</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Absent</p>
-              <p className="text-lg font-semibold">--</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Hours</p>
-              <p className="text-lg font-semibold">--</p>
-            </div>
-          </div>
-        </div>
-      </div>
+          </CardHeader>
 
-      <div className="bg-white shadow-sm rounded-xl border border-[#e2e8f0] overflow-hidden">
-        <div className="p-5 border-b border-[#e2e8f0]">
-          <h3 className="text-lg font-semibold">
-            Monthly Attendance Summary {selectedMonth && `- ${selectedMonth}`}
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[#f8fafc]">
-              <tr>
-                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Presents</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Absent</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productive Hours</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Hours/Day</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e2e8f0]">
-              <tr>
-                <td className="px-5 py-4 whitespace-nowrap text-sm font-medium">--</td>
-                <td className="px-5 py-4 whitespace-nowrap text-sm">--</td>
-                <td className="px-5 py-4 whitespace-nowrap text-sm">--</td>
-                <td className="px-5 py-4 whitespace-nowrap text-sm">--</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
-          <div className="bg-[#4ade80] bg-opacity-10 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-          </div>
-          <span className="text-sm font-medium text-[#334557]"> Quick Check-in</span>
-        </button>
-        <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
-          <div className="bg-[#f59e0b] bg-opacity-10 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <span className="text-sm font-medium text-[#334557]">Start Break</span>
-        </button>
-        <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
-          <div className="bg-[#ef4444] bg-opacity-10 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-          </div>
-          <span className="text-sm font-medium text-[#334557]">Check Out</span>
-        </button>
-        <button className="bg-white shadow-sm rounded-lg p-4 border border-[#e2e8f0] flex items-center gap-3 hover:bg-[#f8fafc] transition-colors">
-          <div className="bg-[#3b82f6] bg-opacity-10 p-2 rounded-lg">
-            <svg className="w-5 h-5 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-          </div>
-          <span className="text-sm font-medium text-[#334557]">Request Leave</span>
-        </button>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  label: "Total Present",
+                  value: selectedMonth ? "22" : "--",
+                  icon: CheckCircle,
+                  color: "emerald",
+                  gradient: "from-emerald-50 to-green-50",
+                  border: "border-emerald-100",
+                },
+                {
+                  label: "Total Absent",
+                  value: selectedMonth ? "1" : "--",
+                  icon: XCircle,
+                  color: "red",
+                  gradient: "from-red-50 to-rose-50",
+                  border: "border-red-100",
+                },
+                {
+                  label: "Productive Hours",
+                  value: selectedMonth ? "176h" : "--",
+                  icon: Clock,
+                  color: "blue",
+                  gradient: "from-blue-50 to-indigo-50",
+                  border: "border-blue-100",
+                },
+                {
+                  label: "Avg. Hours/Day",
+                  value: selectedMonth ? "8.2h" : "--",
+                  icon: TrendingUp,
+                  color: "purple",
+                  gradient: "from-purple-50 to-violet-50",
+                  border: "border-purple-100",
+                },
+              ].map(({ label, value, icon: Icon, color, gradient, border }) => (
+                <div
+                  key={label}
+                  className={`bg-gradient-to-br ${gradient} p-6 rounded-xl border ${border} hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`p-3 bg-${color}-500 rounded-lg group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <h4 className="text-sm font-medium text-slate-600 mb-2">{label}</h4>
+                  <p className="text-3xl font-bold text-slate-900">{value}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard

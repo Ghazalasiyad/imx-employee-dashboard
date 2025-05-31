@@ -1,293 +1,514 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { StartBreak, endBreak } from "@/components/Api/PostServices";
-import {
-  checkIn,
-  checkOut,
-  getAttendanceSummary,
-} from "@/components/Api/PostServices";
-import { toast } from "react-toastify";
-import { format } from "date-fns";
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { StartBreak, endBreak } from "@/components/Api/PostServices"
+import { checkIn, checkOut, getAttendanceSummary } from "@/components/Api/PostServices"
+import { toast } from "react-toastify"
+import { format } from "date-fns"
 
 const Attendance = () => {
-  const [today, setToday] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
-  const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [hasCheckedOut, setHasCheckedOut] = useState(false);
-  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
-  const [breakEndTime, setBreakEndTime] = useState<Date | null>(null);
-  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null);
-  const [onBreak, setOnBreak] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [timelineEvents, setTimelineEvents] = useState<Array<{
-    type: string;
-    time: Date;
-    description: string;
-  }>>([]);
+  const [today, setToday] = useState("")
+  const [employeeId, setEmployeeId] = useState("")
+  const [hasCheckedIn, setHasCheckedIn] = useState(false)
+  const [hasCheckedOut, setHasCheckedOut] = useState(false)
+  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null)
+  const [breakEndTime, setBreakEndTime] = useState<Date | null>(null)
+  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null)
+  const [onBreak, setOnBreak] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [timelineEvents, setTimelineEvents] = useState<
+    Array<{
+      type: string
+      time: Date
+      description: string
+    }>
+  >([])
 
   useEffect(() => {
-    const now = new Date();
+    const now = new Date()
     setToday(
       now.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
-      })
-    );
-  }, []);
+      }),
+    )
+  }, [])
 
   useEffect(() => {
-    const employee = localStorage.getItem("employeeId");
+    const employee = localStorage.getItem("employeeId")
+    const checkedIn = localStorage.getItem("hasCheckedIn")
     if (employee) {
-      setEmployeeId(employee);
+      setEmployeeId(employee)
     }
-    const checkedIn = localStorage.getItem("hasCheckedIn");
     if (checkedIn === "true") {
-      setHasCheckedIn(true);
+      setHasCheckedIn(true)
     }
-  }, []);
+  }, [])
 
   const addTimelineEvent = (type: string, description: string) => {
-    const now = new Date();
-    setTimelineEvents(prev => [
-      ...prev,
-      { type, time: now, description }
-    ]);
-  };
+    const now = new Date()
+    setTimelineEvents((prev) => [...prev, { type, time: now, description }])
+  }
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  }
 
-  const {
-    mutate: handleCheckInOut,
-    isPending: isProcessingCheck,
-  } = useMutation({
-    mutationFn: () => hasCheckedIn ? checkOut() : checkIn(),
+  const calculateTotalHours = (
+    checkInTime: Date | null,
+    checkOutTime: Date | null,
+    breakStart: Date | null,
+    breakEnd: Date | null,
+  ) => {
+    if (!checkInTime || !checkOutTime) return "N/A"
+
+    // Calculate total time between check-in and check-out
+    const totalMs = checkOutTime.getTime() - checkInTime.getTime()
+
+    // Calculate break time if applicable
+    let breakMs = 0
+    if (breakStart) {
+      const breakEndTime = breakEnd || checkOutTime // if break is ongoing, end it at check-out
+      breakMs = breakEndTime.getTime() - breakStart.getTime()
+    }
+
+    // Calculate net working time (total - breaks)
+    const netWorkingMs = totalMs - breakMs
+    const netWorkingHours = netWorkingMs / (1000 * 60 * 60)
+
+    return `${netWorkingHours.toFixed(2)}h`
+  }
+
+  const { mutate: handleCheckInOut, isPending: isProcessingCheck } = useMutation({
+    mutationFn: async () => {
+      if (hasCheckedIn) {
+        // If checking out and on break, end the break first
+        if (onBreak) {
+          await endBreak()
+          const endTime = new Date()
+          setBreakEndTime(endTime)
+          setOnBreak(false)
+          addTimelineEvent("break-end", `Break ended at ${formatTime(endTime)}`)
+        }
+        return checkOut()
+      } else {
+        return checkIn()
+      }
+    },
     onSuccess: (data) => {
       if (hasCheckedIn) {
-        const outTime = new Date();
-        setCheckOutTime(outTime);
-        setHasCheckedIn(false);
-        setHasCheckedOut(true);
-        localStorage.removeItem("hasCheckedIn");
-        addTimelineEvent('checkout', `Checked out at ${formatTime(outTime)}`);
-        toast.success("Checked out successfully!");
+        const outTime = new Date()
+        setCheckOutTime(outTime)
+        setHasCheckedIn(false)
+        setHasCheckedOut(true)
+        localStorage.removeItem("hasCheckedIn")
+        addTimelineEvent("checkout", `Checked out at ${formatTime(outTime)}`)
+        toast.success("Checked out successfully!")
       } else {
-        setHasCheckedIn(true);
-        localStorage.setItem("hasCheckedIn", "true");
-        addTimelineEvent('checkin', `Checked in at ${formatTime(new Date())}`);
-        toast.success("Checked in successfully!");
+        setHasCheckedIn(true)
+        localStorage.setItem("hasCheckedIn", "true")
+        addTimelineEvent("checkin", `Checked in at ${formatTime(new Date())}`)
+        toast.success("Checked in successfully!")
       }
     },
     onError: (error: any) => {
       const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Something went wrong!";
-      toast.error(message);
+        error?.response?.data?.message || error?.response?.data?.error || error?.message || "Something went wrong!"
+      toast.error(message)
     },
-  });
-
+  })
 
   const handleBreakToggle = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       if (onBreak) {
-        await endBreak();
-        const endTime = new Date();
-        setBreakEndTime(endTime);
-        setOnBreak(false);
-        addTimelineEvent('break-end', `Break ended at ${formatTime(endTime)}`);
+        await endBreak()
+        const endTime = new Date()
+        setBreakEndTime(endTime)
+        setOnBreak(false)
+        addTimelineEvent("break-end", `Break ended at ${formatTime(endTime)}`)
       } else {
-        await StartBreak();
-        const startTime = new Date();
-        setBreakStartTime(startTime);
-        setOnBreak(true);
-        addTimelineEvent('break-start', `Break started at ${formatTime(startTime)}`);
+        await StartBreak()
+        const startTime = new Date()
+        setBreakStartTime(startTime)
+        setOnBreak(true)
+        addTimelineEvent("break-start", `Break started at ${formatTime(startTime)}`)
       }
     } catch (error) {
-      console.error("Break API Error:", error);
-      toast.error("Failed to update break status");
+      console.error("Break API Error:", error)
+      toast.error("Failed to update break status")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["attendanceSummary", employeeId],
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
-  });
+  })
 
   const attendanceData = useMemo(() => {
     if (data?.length > 0) {
-      const record = data[0];
+      const record = data[0]
       const breakText = record.breakStartTime
-        ? `${format(new Date(record.breakStartTime), "hh:mm a")} - ${record.breakEndTime
-          ? format(new Date(record.breakEndTime), "hh:mm a")
-          : "Ongoing"
-        }`
-        : breakStartTime
-          ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"
+        ? `${format(new Date(record.breakStartTime), "hh:mm a")} - ${
+            record.breakEndTime ? format(new Date(record.breakEndTime), "hh:mm a") : "Ongoing"
           }`
-          : "N/A";
+        : breakStartTime
+          ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"}`
+          : "N/A"
 
-      return [{
-        date: format(new Date(), "dd MMM yyyy"),
-        checkIn: record.checkInTime
-          ? format(new Date(record.checkInTime), "hh:mm a")
-          : "N/A",
-        breakTime: breakText,
-        checkOut: record.checkOutTime
-          ? format(new Date(record.checkOutTime), "hh:mm a")
-          : checkOutTime
-            ? format(checkOutTime, "hh:mm a")
-            : "N/A",
-        hours: record.totalHoursWorked ? `${record.totalHoursWorked}h` : "N/A",
-        status: "Complete",
-      }];
+      return [
+        {
+          date: format(new Date(record.checkInTime), "dd MMM yyyy"),
+          checkIn: record.checkInTime ? format(new Date(record.checkInTime), "hh:mm a") : "N/A",
+          breakTime: breakText,
+          checkOut: record.checkOutTime
+            ? format(new Date(record.checkOutTime), "hh:mm a")
+            : checkOutTime
+              ? format(checkOutTime, "hh:mm a")
+              : "N/A",
+          hours: record.totalHoursWorked
+            ? `${record.totalHoursWorked}h`
+            : calculateTotalHours(
+                record.checkInTime ? new Date(record.checkInTime) : null,
+                record.checkOutTime ? new Date(record.checkOutTime) : checkOutTime,
+                record.breakStartTime ? new Date(record.breakStartTime) : breakStartTime,
+                record.breakEndTime ? new Date(record.breakEndTime) : breakEndTime,
+              ),
+          status: "Complete",
+        },
+      ]
     }
 
     const breakText = breakStartTime
-      ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"
-      }`
-      : "N/A";
+      ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"}`
+      : "N/A"
 
-    return [{
-      date: format(new Date(), "dd MMM yyyy"),
-      checkIn: hasCheckedIn ? format(new Date(), "hh:mm a") : "N/A",
-      breakTime: breakText,
-      checkOut: checkOutTime ? format(checkOutTime, "hh:mm a") : "N/A",
-      hours: "N/A",
-      status: hasCheckedOut ? "Complete" : hasCheckedIn ? "In Progress" : "Not Started",
-    }];
-  }, [data, hasCheckedIn, hasCheckedOut, breakStartTime, breakEndTime, checkOutTime]);
+    return [
+      {
+        date: hasCheckedIn ? format(new Date(), "dd MMM yyyy") : "N/A",
+        checkIn: hasCheckedIn ? format(new Date(), "hh:mm a") : "N/A",
+        breakTime: breakText,
+        checkOut: checkOutTime ? format(checkOutTime, "hh:mm a") : "N/A",
+        hours: hasCheckedOut
+          ? calculateTotalHours(
+              hasCheckedIn ? new Date() : null,
+              checkOutTime,
+              breakStartTime,
+              breakEndTime || checkOutTime, // if break is ongoing, end it at check-out
+            )
+          : "N/A",
+        status: hasCheckedOut ? "Complete" : hasCheckedIn ? "In Progress" : "Not Started",
+      },
+    ]
+  }, [data, hasCheckedIn, hasCheckedOut, breakStartTime, breakEndTime, checkOutTime])
 
   const getStatusBadgeClass = () => {
-    if (hasCheckedOut) return "status-checkedout";
-    if (onBreak) return "status-break";
-    if (hasCheckedIn) return "status-working";
-    return "";
-  };
+    if (hasCheckedOut) return "status-checkedout"
+    if (onBreak) return "status-break"
+    if (hasCheckedIn) return "status-working"
+    return ""
+  }
 
   const getStatusText = () => {
-    if (hasCheckedOut) return "Checked Out";
-    if (onBreak) return "On Break";
-    if (hasCheckedIn) return "Working";
-    return "-";
-  };
+    if (hasCheckedOut) return "Checked Out"
+    if (onBreak) return "On Break"
+    if (hasCheckedIn) return "Working"
+    return "-"
+  }
 
   return (
-    <div className="max-w-8xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="bg-[#f9f9f9] text-[#334557] p-3 flex justify-between items-center">
-        <h2 className="text-4xl font-semibold">Attendance Dashboard</h2>
-        <div className="text-sm opacity-90">{today}</div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-700 text-white p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Attendance Dashboard</h1>
+                <p className="text-slate-300 text-sm">Track your daily work hours and breaks</p>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-medium">{today}</div>
+                <div
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mt-2 ${getStatusBadgeClass()}`}
+                >
+                  <div className="w-2 h-2 rounded-full bg-current"></div>
+                  {getStatusText()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-[#334557]">Today's Attendance</h2>
-          <div className="flex gap-3">
+        {/* Action Buttons Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 p-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => handleCheckInOut()}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isProcessingCheck
-                ? "bg-[#334557] text-white cursor-not-allowed"
-                : hasCheckedIn
-                  ? "bg-[#f87171] text-white hover:bg-[#ef4444]"
-                  : "bg-[#4ade80] text-[#166534] hover:bg-[#3acf74]"
-                }`}
+              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${
+                isProcessingCheck
+                  ? "bg-slate-400 text-white cursor-not-allowed"
+                  : hasCheckedIn
+                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-200 shadow-lg shadow-red-500/25"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-emerald-200 shadow-lg shadow-emerald-500/25"
+              }`}
               disabled={isProcessingCheck}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              {isProcessingCheck
-                ? "Processing..."
-                : hasCheckedIn
-                  ? "Check Out"
-                  : "Check In"}
+              <div className="flex items-center gap-3">
+                {isProcessingCheck ? (
+                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d={
+                        hasCheckedIn
+                          ? "M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          : "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                      }
+                    ></path>
+                  </svg>
+                )}
+                <span>{isProcessingCheck ? "Processing..." : hasCheckedIn ? "Check Out" : "Check In"}</span>
+              </div>
             </button>
+
             <button
               onClick={handleBreakToggle}
               disabled={!hasCheckedIn || loading || hasCheckedOut}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!hasCheckedIn || hasCheckedOut
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : onBreak
-                  ? "bg-[#334557] text-[#f1ab27]"
-                  : "bg-[#334557] text-white"
-                }`}
+              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${
+                !hasCheckedIn || hasCheckedOut
+                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  : onBreak
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 focus:ring-amber-200 shadow-lg shadow-amber-500/25"
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-200 shadow-lg shadow-blue-500/25"
+              }`}
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <div className="flex items-center gap-3">
+                {loading ? (
+                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
                   </svg>
-                  {onBreak ? "End Break" : "Start Break"}
-                </>
-              )}
+                )}
+                <span>{loading ? "Processing..." : onBreak ? "End Break" : "Start Break"}</span>
+              </div>
             </button>
           </div>
         </div>
 
-        {timelineEvents.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-medium text-gray-600 mb-3">Today's Activity Timeline</h3>
-            <div className="relative pl-6">
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-300"></div>
-              {timelineEvents.map((event, index) => (
-                <div key={index} className="relative pb-4 pl-6 last:pb-0">
-                  <div className={`absolute left-0 top-1 w-3 h-3 rounded-full ${event.type === 'checkin' ? 'bg-[#4ade80] ring-2 ring-[#4ade8040]' :
-                    event.type === 'break-start' ? 'bg-[#fbbf24] ring-2 ring-[#fbbf2440]' :
-                      event.type === 'break-end' ? 'bg-[#fbbf24] ring-2 ring-[#fbbf2440] border-2 border-white' :
-                        event.type === 'checkout' ? 'bg-[#f87171] ring-2 ring-[#f8717140]' :
-                          'bg-[#60a5fa] ring-2 ring-[#60a5fa40]'
-                    }`}></div>
-                  <div className="text-xs text-gray-500">{formatTime(event.time)}</div>
-                  <div className="text-sm font-medium text-gray-800">{event.description}</div>
-                </div>
-              ))}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Attendance Table */}
+          <div className="xl:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200">
+                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    ></path>
+                  </svg>
+                  Today's Attendance
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Date</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Check In</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Break Time</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Check Out</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Total Hours</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceData.map((item, index) => (
+                      <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-slate-700 font-medium">{item.date}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            {item.checkIn}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{item.breakTime}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          {item.checkOut !== "N/A" && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              {item.checkOut}
+                            </div>
+                          )}
+                          {item.checkOut === "N/A" && <span className="text-slate-400">N/A</span>}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.hours}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              item.status === "Complete"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : item.status === "In Progress"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-3 text-left text-gray-600 font-medium">Date</th>
-                <th className="p-3 text-left text-gray-600 font-medium">Check In</th>
-                <th className="p-3 text-left text-gray-600 font-medium">Break Time</th>
-                <th className="p-3 text-left text-gray-600 font-medium">Check Out</th>
-                <th className="p-3 text-left text-gray-600 font-medium">Total Hours</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendanceData.map((item, index) => (
-                <tr key={index} className="border-t border-gray-200">
-                  <td className="p-3">{item.date}</td>
-                  <td className="p-3">{item.checkIn}</td>
-                  <td className="p-3">{item.breakTime}</td>
-                  <td className="p-3">{item.checkOut}</td>
-                  <td className="p-3 font-medium">{item.hours}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Activity Timeline */}
+          {timelineEvents.length > 0 && (
+            <div className="xl:col-span-1">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit">
+                <div className="p-6 border-b border-slate-200">
+                  <h3 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                    Today's Activity
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="relative">
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 to-slate-200"></div>
+                    <div className="space-y-6">
+                      {timelineEvents.map((event, index) => (
+                        <div key={index} className="relative flex items-start gap-4">
+                          <div
+                            className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ring-4 ring-white shadow-sm ${
+                              event.type === "checkin"
+                                ? "bg-emerald-500"
+                                : event.type === "break-start"
+                                  ? "bg-amber-500"
+                                  : event.type === "break-end"
+                                    ? "bg-orange-500"
+                                    : event.type === "checkout"
+                                      ? "bg-red-500"
+                                      : "bg-blue-500"
+                            }`}
+                          >
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              {event.type === "checkin" && (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                                ></path>
+                              )}
+                              {(event.type === "break-start" || event.type === "break-end") && (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
+                              )}
+                              {event.type === "checkout" && (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                ></path>
+                              )}
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {event.description.split(" at ")[0]}
+                              </p>
+                              <time className="text-xs text-slate-500 font-medium">{formatTime(event.time)}</time>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">{event.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Attendance;
+      <style>{`
+      .status-checkedout {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+      }
+      .status-break {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+      }
+      .status-working {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+      }
+    `}</style>
+    </div>
+  )
+}
+
+export default Attendance

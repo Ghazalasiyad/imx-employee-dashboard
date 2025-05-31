@@ -56,17 +56,6 @@ export async function endBreak(): Promise<any> {
 }
 
 
-// Partial Checkout
-export async function partialCheckout(): Promise<any> {
-  const employeeId = localStorage.getItem("employeeId");
-  if (!employeeId) {
-    throw new Error("Employee ID not found");
-  }
-
-  const response = await Instance.post("/attendance/partial-checkout", { employeeId });
-  return response.data;
-}
-
 // Checkout
 export async function checkOut(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");

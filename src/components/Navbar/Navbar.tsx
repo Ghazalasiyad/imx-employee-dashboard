@@ -29,7 +29,7 @@ const Navbar = () => {
       {
         id: 1,
         title: 'New Message',
-        message: 'You have received a new message from John',
+        message: 'You have received a new message from Muhammad Iqbal',
         time: '10 min ago',
         isRead: false,
       },
