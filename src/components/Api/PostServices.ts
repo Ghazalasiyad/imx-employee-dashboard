@@ -28,7 +28,7 @@ export async function checkIn(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  const response = await Instance.post("/attendance/check-in", { employeeId });
+  const response = await Instance.post("/employee/attendance/check-in", { employeeId });
   return response.data;
 }
 
@@ -40,7 +40,7 @@ export async function StartBreak(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  const response = await Instance.post("/attendance/start-break", { employeeId });
+  const response = await Instance.post("/employee/attendance/start-break", { employeeId });
   return response.data;
 }
 
@@ -51,7 +51,7 @@ export async function endBreak(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  const response = await Instance.post("/attendance/end-break", { employeeId });
+  const response = await Instance.post("/employee/attendance/end-break", { employeeId });
   return response.data;
 }
 
@@ -63,7 +63,7 @@ export async function checkOut(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  const response = await Instance.post("/attendance/check-out", { employeeId });
+  const response = await Instance.post("/employee/attendance/check-out", { employeeId });
   return response.data;
 }
 
@@ -76,7 +76,7 @@ export async function getAttendanceSummary(): Promise<any> {
 
   const today = new Date().toISOString().split("T")[0];
   const response = await Instance.get(
-    `/attendance/summary/${employeeId}`
+    `/employee/attendance/summary/${employeeId}`
   );
   return response.data.data;
 }
@@ -99,5 +99,19 @@ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
 
 export async function getLeaves(): Promise<ILeaveRequest[]> {
   const response = await Instance.get("/leaveRequest/myLeaves");
+  return response.data.data;
+}
+
+
+export async function getSequentialAttendance(): Promise<any> {
+  const employeeId = localStorage.getItem("employeeId");
+  if (!employeeId) {
+    throw new Error("Employee ID not found");
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const response = await Instance.get(
+    `/employee/sequence/${employeeId}?date=${today}`
+  );
   return response.data.data;
 }
