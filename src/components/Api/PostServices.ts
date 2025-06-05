@@ -12,8 +12,9 @@ export async function login({
   try {
     const response = await Instance.post(`/employee/login`, { email, password });
     localStorage.setItem('isAuthenticated', 'true');
-
+ localStorage.setItem('employeeId', response.data.employeeId);
     return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || error.message || 'Failed to login'
@@ -22,6 +23,7 @@ export async function login({
 }
 
 // Check-in
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function checkIn(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -34,6 +36,7 @@ export async function checkIn(): Promise<any> {
 
 
 // start break
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function StartBreak(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -45,6 +48,7 @@ export async function StartBreak(): Promise<any> {
 }
 
 // end break
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function endBreak(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -57,6 +61,7 @@ export async function endBreak(): Promise<any> {
 
 
 // Checkout
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function checkOut(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
@@ -68,13 +73,14 @@ export async function checkOut(): Promise<any> {
 }
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getAttendanceSummary(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
     throw new Error("Employee ID not found");
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  // const today = new Date().toISOString().split("T")[0];
   const response = await Instance.get(
     `/employee/attendance/summary/${employeeId}`
   );
@@ -90,6 +96,7 @@ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
     });
     return response.data;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || error.message || "Failed to add Leave Request"
@@ -103,6 +110,7 @@ export async function getLeaves(): Promise<ILeaveRequest[]> {
 }
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getSequentialAttendance(): Promise<any> {
   const employeeId = localStorage.getItem("employeeId");
   if (!employeeId) {
