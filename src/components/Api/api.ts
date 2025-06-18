@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const stage = 'prod';
+const stage = 'dev';
 const url = {
   dev: 'http://localhost:4000/api/v1',
   prod: 'https://employee.ideometrix.com/api/v1'

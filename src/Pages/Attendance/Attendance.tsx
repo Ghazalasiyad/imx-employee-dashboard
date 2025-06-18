@@ -365,7 +365,7 @@ const Attendance = () => {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Break Time</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Check Out</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Total Hours</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Status</th>
+                      
                     </tr>
                   </thead>
                   <tbody>
@@ -389,19 +389,7 @@ const Attendance = () => {
                           {item.checkOut === "N/A" && <span className="text-slate-400">N/A</span>}
                         </td>
                         <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.hours}</td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              item.status === "Complete"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : item.status === "In Progress"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
+                        {/*  */}
                       </tr>
                     ))}
                   </tbody>

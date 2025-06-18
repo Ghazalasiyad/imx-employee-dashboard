@@ -16,8 +16,9 @@ export async function login({
     return response.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    console.log(error)
     throw new Error(
-      error.response?.data?.message || error.message || 'Failed to login'
+      error.response?.data?.error || error.message || 'Failed to login'
     );
   }
 }
