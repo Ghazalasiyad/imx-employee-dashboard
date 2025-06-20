@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { StartBreak, endBreak } from "@/components/Api/PostServices"
@@ -65,17 +63,14 @@ const Attendance = () => {
   ) => {
     if (!checkInTime || !checkOutTime) return "N/A"
 
-    // Calculate total time between check-in and check-out
     const totalMs = checkOutTime.getTime() - checkInTime.getTime()
 
-    // Calculate break time if applicable
     let breakMs = 0
     if (breakStart) {
-      const breakEndTime = breakEnd || checkOutTime // if break is ongoing, end it at check-out
+      const breakEndTime = breakEnd || checkOutTime 
       breakMs = breakEndTime.getTime() - breakStart.getTime()
     }
 
-    // Calculate net working time (total - breaks)
     const netWorkingMs = totalMs - breakMs
     const netWorkingHours = netWorkingMs / (1000 * 60 * 60)
 
@@ -85,7 +80,6 @@ const Attendance = () => {
   const { mutate: handleCheckInOut, isPending: isProcessingCheck } = useMutation({
     mutationFn: async () => {
       if (hasCheckedIn) {
-        // If checking out and on break, end the break first
         if (onBreak) {
           await endBreak()
           const endTime = new Date()
@@ -155,9 +149,8 @@ const Attendance = () => {
     if (data?.length > 0) {
       const record = data[0]
       const breakText = record.breakStartTime
-        ? `${format(new Date(record.breakStartTime), "hh:mm a")} - ${
-            record.breakEndTime ? format(new Date(record.breakEndTime), "hh:mm a") : "Ongoing"
-          }`
+        ? `${format(new Date(record.breakStartTime), "hh:mm a")} - ${record.breakEndTime ? format(new Date(record.breakEndTime), "hh:mm a") : "Ongoing"
+        }`
         : breakStartTime
           ? `${format(breakStartTime, "hh:mm a")} - ${breakEndTime ? format(breakEndTime, "hh:mm a") : "Ongoing"}`
           : "N/A"
@@ -175,11 +168,11 @@ const Attendance = () => {
           hours: record.totalHoursWorked
             ? `${record.totalHoursWorked}h`
             : calculateTotalHours(
-                record.checkInTime ? new Date(record.checkInTime) : null,
-                record.checkOutTime ? new Date(record.checkOutTime) : checkOutTime,
-                record.breakStartTime ? new Date(record.breakStartTime) : breakStartTime,
-                record.breakEndTime ? new Date(record.breakEndTime) : breakEndTime,
-              ),
+              record.checkInTime ? new Date(record.checkInTime) : null,
+              record.checkOutTime ? new Date(record.checkOutTime) : checkOutTime,
+              record.breakStartTime ? new Date(record.breakStartTime) : breakStartTime,
+              record.breakEndTime ? new Date(record.breakEndTime) : breakEndTime,
+            ),
           status: "Complete",
         },
       ]
@@ -197,11 +190,11 @@ const Attendance = () => {
         checkOut: checkOutTime ? format(checkOutTime, "hh:mm a") : "N/A",
         hours: hasCheckedOut
           ? calculateTotalHours(
-              hasCheckedIn ? new Date() : null,
-              checkOutTime,
-              breakStartTime,
-              breakEndTime || checkOutTime, // if break is ongoing, end it at check-out
-            )
+            hasCheckedIn ? new Date() : null,
+            checkOutTime,
+            breakStartTime,
+            breakEndTime || checkOutTime,
+          )
           : "N/A",
         status: hasCheckedOut ? "Complete" : hasCheckedIn ? "In Progress" : "Not Started",
       },
@@ -225,7 +218,6 @@ const Attendance = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-slate-900 to-slate-700 text-white p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -246,18 +238,16 @@ const Attendance = () => {
           </div>
         </div>
 
-        {/* Action Buttons Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 p-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => handleCheckInOut()}
-              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${
-                isProcessingCheck
+              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${isProcessingCheck
                   ? "bg-slate-400 text-white cursor-not-allowed"
                   : hasCheckedIn
                     ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-200 shadow-lg shadow-red-500/25"
                     : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-emerald-200 shadow-lg shadow-emerald-500/25"
-              }`}
+                }`}
               disabled={isProcessingCheck}
             >
               <div className="flex items-center gap-3">
@@ -298,13 +288,12 @@ const Attendance = () => {
             <button
               onClick={handleBreakToggle}
               disabled={!hasCheckedIn || loading || hasCheckedOut}
-              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${
-                !hasCheckedIn || hasCheckedOut
+              className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${!hasCheckedIn || hasCheckedOut
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                   : onBreak
                     ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 focus:ring-amber-200 shadow-lg shadow-amber-500/25"
                     : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-200 shadow-lg shadow-blue-500/25"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 {loading ? (
@@ -340,7 +329,6 @@ const Attendance = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Attendance Table */}
           <div className="xl:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200">
@@ -365,7 +353,7 @@ const Attendance = () => {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Break Time</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Check Out</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">Total Hours</th>
-                      
+
                     </tr>
                   </thead>
                   <tbody>
@@ -398,7 +386,6 @@ const Attendance = () => {
             </div>
           </div>
 
-          {/* Activity Timeline */}
           {timelineEvents.length > 0 && (
             <div className="xl:col-span-1">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit">
@@ -422,8 +409,7 @@ const Attendance = () => {
                       {timelineEvents.map((event, index) => (
                         <div key={index} className="relative flex items-start gap-4">
                           <div
-                            className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ring-4 ring-white shadow-sm ${
-                              event.type === "checkin"
+                            className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ring-4 ring-white shadow-sm ${event.type === "checkin"
                                 ? "bg-emerald-500"
                                 : event.type === "break-start"
                                   ? "bg-amber-500"
@@ -432,7 +418,7 @@ const Attendance = () => {
                                     : event.type === "checkout"
                                       ? "bg-red-500"
                                       : "bg-blue-500"
-                            }`}
+                              }`}
                           >
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               {event.type === "checkin" && (
