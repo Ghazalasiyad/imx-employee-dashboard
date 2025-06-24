@@ -1,4 +1,8 @@
 import axios from 'axios';
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5151bbb4e7e322132f717fe69f91041962c1a9db
 const stage = 'dev';
 const url = {
     dev: 'http://localhost:4000/api/v1',

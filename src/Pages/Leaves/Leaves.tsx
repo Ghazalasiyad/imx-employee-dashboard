@@ -15,7 +15,14 @@ const Leaves = () => {
     return diffDays;
   };
 
-  const [selectedLeave, setSelectedLeave] = useState(null);
+  const [selectedLeave, setSelectedLeave] = useState<null | {
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: string;
+}>(null);
+
   const [showApplyForm, setShowApplyForm] = useState(false);
 
   const closePopup = () => {
@@ -54,6 +61,7 @@ const Leaves = () => {
       setFormData({ startDate: "", endDate: "", reason: "", leaveType: "" });
       setShowApplyForm(false);
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       toast.error(
         `Failed to add Leave Request: ${error.response?.data.message || error.message
@@ -175,7 +183,7 @@ const Leaves = () => {
                   <option value="" disabled className="text-gray-400">Select leave type</option>
                   <option value="annual leave" className="text-gray-700">Annual Leave</option>
                   <option value="sick leave" className="text-gray-700">Sick Leave</option>
-                  <option value="casual leave" className="text-gray-700">Casual Leave</option>
+
                 </select>
               </div>
 
@@ -196,7 +204,7 @@ const Leaves = () => {
                 <button
                   type="button"
                   onClick={() => setShowApplyForm(false)}
-                  className="px-5 py-2.5 border text-white border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="px-5 py-2.5 bg-[#334557] text-white rounded-lg hover:bg-[#263445] transition-colors font-medium"
                 >
                   Cancel
                 </button>
@@ -238,6 +246,7 @@ const Leaves = () => {
                 </td>
               </tr>
             ) : leaves && leaves.length > 0 ? (
+              /* eslint-disable @typescript-eslint/no-explicit-any */
               leaves.map((leave: any, index: number) => (
                 <tr key={index} className="border-b border-[#f4f7fa] text-black">
                   <td className="py-3 px-4 capitalize">{leave.leaveType}</td>
@@ -248,16 +257,18 @@ const Leaves = () => {
                     {calculateDays(leave.startDate, leave.endDate)}
                   </td>
                   <td className="py-3 px-4">
-                    <span
-                      className={`text-white text-xs font-medium px-3 py-1 rounded-full ${leave.status === "approved"
-                        ? "bg-green-600"
-                        : leave.status === "pending"
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
-                        }`}
-                    >
-                      {leave.status}
-                    </span>
+                   <span
+  className={`text-white text-xs font-medium px-3 py-1 rounded-full ${
+    leave.status.toLowerCase() === "approved"
+      ? "bg-green-600"
+      : leave.status.toLowerCase() === "pending"
+      ? "bg-yellow-500"
+      : "bg-red-500"
+  }`}
+>
+  {leave.status.charAt(0).toUpperCase() + leave.status.slice(1).toLowerCase()}
+</span>
+
                   </td>
                   <td className="py-3 px-4">
                     <span
@@ -279,23 +290,24 @@ const Leaves = () => {
           </tbody>
         </table>
       </div>
+{selectedLeave && (
+  <div className="absolute inset-0 flex items-center justify-center  bg-black/50 backdrop-blur-sm z-50">
+    <div className="bg-white text-black p-6 rounded-lg w-full max-w-md overflow-hidden">
+      <h3 className="text-lg font-semibold mb-2">Leave Details</h3>
+      <p><strong>Type:</strong> {selectedLeave.leaveType}</p>
+      <p><strong>From:</strong> {selectedLeave.startDate}</p>
+      <p><strong>To:</strong> {selectedLeave.endDate}</p>
+      <p><strong>Days:</strong> {calculateDays(selectedLeave.startDate, selectedLeave.endDate)}</p>
+      <p><strong>Reason:</strong> {selectedLeave.reason}</p>
+      <p><strong>Status:</strong> {selectedLeave.status}</p>
+      <div className="flex justify-end mt-4">
+        <Button onClick={closePopup} className="!bg-[#2c3445] text-white">Close</Button>
+      </div>
+    </div>
+  </div>
+)}
 
-      {selectedLeave && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-20">
-          <div className="bg-white text-black p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-2">Leave Details</h3>
-            <p><strong>Type:</strong> {selectedLeave}</p>
-            <p><strong>From:</strong> {selectedLeave}</p>
-            <p><strong>To:</strong> {selectedLeave}</p>
-            <p><strong>Days:</strong> {calculateDays(selectedLeave, selectedLeave)}</p>
-            <p><strong>Reason:</strong> {selectedLeave}</p>
-            <p><strong>Status:</strong> {selectedLeave}</p>
-            <div className="flex justify-end mt-4">
-              <Button onClick={closePopup} className="!bg-[#2c3445] text-white">Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

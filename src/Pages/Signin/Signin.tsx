@@ -29,8 +29,8 @@ const SignInForm: React.FC = () => {
       navigate('/dashboard');
       localStorage.removeItem("hasCheckedIn");
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
+      console.log(err)
       const errorMessage =
         err.response?.data?.message || err.message || 'Login failed. Please try again.';
       setError(errorMessage);
