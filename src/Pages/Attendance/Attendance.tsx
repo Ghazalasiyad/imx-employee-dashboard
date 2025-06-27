@@ -37,19 +37,23 @@ const Attendance = () => {
 
   useEffect(() => {
     const employee = localStorage.getItem("employeeId")
-    const checkedIn = localStorage.getItem("hasCheckedIn")
     if (employee) {
       setEmployeeId(employee)
     }
-    if (checkedIn === "true") {
-      setHasCheckedIn(true)
-    }
   }, [])
 
-  const addTimelineEvent = (type: string, description: string) => {
-    const now = new Date()
-    setTimelineEvents((prev) => [...prev, { type, time: now, description }])
-  }
+
+ const addTimelineEvent = (type: string, description: string) => {
+  const now = new Date()
+  const newEvent = { type, time: now, description }
+
+  setTimelineEvents((prev) => {
+    const updated = [...prev, newEvent]
+    localStorage.setItem("timelineEvents", JSON.stringify(updated))
+    return updated
+  })
+}
+
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -67,7 +71,7 @@ const Attendance = () => {
 
     let breakMs = 0
     if (breakStart) {
-      const breakEndTime = breakEnd || checkOutTime 
+      const breakEndTime = breakEnd || checkOutTime
       breakMs = breakEndTime.getTime() - breakStart.getTime()
     }
 
@@ -144,6 +148,25 @@ const Attendance = () => {
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
   })
+
+  useEffect(() => {
+    if (data?.length > 0) {
+      const record = data[0]
+
+      const checkIn = record.checkInTime ? new Date(record.checkInTime) : null
+      const checkOut = record.checkOutTime ? new Date(record.checkOutTime) : null
+      const breakStart = record.breakStartTime ? new Date(record.breakStartTime) : null
+      const breakEnd = record.breakEndTime ? new Date(record.breakEndTime) : null
+
+      setHasCheckedIn(!!checkIn && !checkOut)
+      setHasCheckedOut(!!checkOut)
+      setBreakStartTime(breakStart)
+      setBreakEndTime(breakEnd)
+      setOnBreak(!!breakStart && !breakEnd)
+      setCheckOutTime(checkOut)
+    }
+  }, [data])
+
 
   const attendanceData = useMemo(() => {
     if (data?.length > 0) {
@@ -243,10 +266,10 @@ const Attendance = () => {
             <button
               onClick={() => handleCheckInOut()}
               className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${isProcessingCheck
-                  ? "bg-slate-400 text-white cursor-not-allowed"
-                  : hasCheckedIn
-                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-200 shadow-lg shadow-red-500/25"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-emerald-200 shadow-lg shadow-emerald-500/25"
+                ? "bg-slate-400 text-white cursor-not-allowed"
+                : hasCheckedIn
+                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-200 shadow-lg shadow-red-500/25"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-emerald-200 shadow-lg shadow-emerald-500/25"
                 }`}
               disabled={isProcessingCheck}
             >
@@ -289,10 +312,10 @@ const Attendance = () => {
               onClick={handleBreakToggle}
               disabled={!hasCheckedIn || loading || hasCheckedOut}
               className={`group relative px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 ${!hasCheckedIn || hasCheckedOut
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : onBreak
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 focus:ring-amber-200 shadow-lg shadow-amber-500/25"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-200 shadow-lg shadow-blue-500/25"
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : onBreak
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 focus:ring-amber-200 shadow-lg shadow-amber-500/25"
+                  : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-200 shadow-lg shadow-blue-500/25"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -410,14 +433,14 @@ const Attendance = () => {
                         <div key={index} className="relative flex items-start gap-4">
                           <div
                             className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ring-4 ring-white shadow-sm ${event.type === "checkin"
-                                ? "bg-emerald-500"
-                                : event.type === "break-start"
-                                  ? "bg-amber-500"
-                                  : event.type === "break-end"
-                                    ? "bg-orange-500"
-                                    : event.type === "checkout"
-                                      ? "bg-red-500"
-                                      : "bg-blue-500"
+                              ? "bg-emerald-500"
+                              : event.type === "break-start"
+                                ? "bg-amber-500"
+                                : event.type === "break-end"
+                                  ? "bg-orange-500"
+                                  : event.type === "checkout"
+                                    ? "bg-red-500"
+                                    : "bg-blue-500"
                               }`}
                           >
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
