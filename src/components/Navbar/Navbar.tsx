@@ -23,6 +23,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const storedAvatar = localStorage.getItem('avatar') || userAvatar;
 
   useEffect(() => {
     setNotifications([
@@ -108,7 +109,7 @@ const Navbar = () => {
         </div>
         <div className="relative" ref={menuRef}>
           <Avatar
-            src={userAvatar}
+            src={storedAvatar}
             alt="User Avatar"
             onClick={() => {
               setIsMenuOpen(!isMenuOpen);

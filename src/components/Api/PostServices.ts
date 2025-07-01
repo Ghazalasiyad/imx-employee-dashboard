@@ -12,9 +12,12 @@ export async function login({
   try {
     const response = await Instance.post(`/employee/login`, { email, password });
     localStorage.setItem('isAuthenticated', 'true');
- localStorage.setItem('employeeId', response.data.employeeId);
+    localStorage.setItem('employeeId', response.data.employeeId);
+    localStorage.setItem('avatar', response.data.imageUrl);
+    localStorage.setItem('employeeName', response.data.name);
+
     return response.data;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.log(error)
     throw new Error(
@@ -97,7 +100,7 @@ export async function AddLeave(newLeave: FormData): Promise<ILeaveRequest> {
     });
     return response.data;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || error.message || "Failed to add Leave Request"
