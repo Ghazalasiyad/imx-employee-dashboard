@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { getAttendanceSummary } from '@/components/Api/PostServices'
 
 const months = [
   "January",
@@ -71,6 +72,8 @@ const Dashboard = () => {
   const [isTimerRunning, setIsTimerRunning] = useState(true)
   const [currentTip, setCurrentTip] = useState(0)
   const [weather] = useState({ temp: 72, condition: "sunny" as keyof typeof weatherIcons })
+  const [productiveHours, setProductiveHours] = useState<string>('0 min')
+  const [breakMinutes, setBreakMinutes] = useState<number>(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -99,6 +102,43 @@ const Dashboard = () => {
     }, 10000)
 
     return () => clearInterval(tipTimer)
+  }, [])
+
+  useEffect(() => {
+    // Fetch productive hours and break time from backend
+    getAttendanceSummary().then((data) => {
+      if (data && data.length > 0) {
+        if (data[0].totalHoursWorked !== undefined) {
+          setProductiveHours(formatWorkDuration(data[0].totalHoursWorked))
+        } else {
+          setProductiveHours('0 min')
+        }
+        // Calculate break time in minutes
+        if (data[0].breakStartTime && data[0].breakEndTime) {
+          // If only one break for today
+          const start = new Date(data[0].breakStartTime).getTime()
+          const end = new Date(data[0].breakEndTime).getTime()
+          setBreakMinutes(Math.round((end - start) / 60000))
+        } else if (data[0].breaks && Array.isArray(data[0].breaks)) {
+          // If multiple breaks, sum them
+          let total = 0
+          for (const br of data[0].breaks) {
+            if (br.start && br.end) {
+              total += Math.round((new Date(br.end).getTime() - new Date(br.start).getTime()) / 60000)
+            }
+          }
+          setBreakMinutes(total)
+        } else {
+          setBreakMinutes(0)
+        }
+      } else {
+        setProductiveHours('0 min')
+        setBreakMinutes(0)
+      }
+    }).catch(() => {
+      setProductiveHours('0 min')
+      setBreakMinutes(0)
+    })
   }, [])
 
   const formatTime = (seconds: number) => {
@@ -168,6 +208,17 @@ const Dashboard = () => {
   const handleCheckOut = () => {
     setStatus("checked-out")
     setIsTimerRunning(false)
+  }
+
+  function formatWorkDuration(hoursFloat: number | string) {
+    const hoursNum = typeof hoursFloat === 'string' ? parseFloat(hoursFloat) : hoursFloat;
+    if (isNaN(hoursNum)) return 'N/A';
+    const totalMinutes = Math.round(hoursNum * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+    if (hours > 0) return `${hours}h`;
+    return `${minutes} min`;
   }
 
   return (
@@ -297,9 +348,7 @@ const Dashboard = () => {
 
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-slate-900 mb-1 font-mono">
-                            {formatTime(workSeconds)}
-                          </div>
+                          <div className="text-3xl font-bold text-slate-900 mb-1 font-mono">{productiveHours}</div>
                           <div className="text-sm text-slate-500 font-medium">Total Time</div>
                           {isBreakActive && (
                             <div className="text-xs text-amber-600 mt-2 font-medium">
@@ -323,7 +372,7 @@ const Dashboard = () => {
                             </div>
                             <span className="text-sm font-medium text-slate-700">Work Time</span>
                           </div>
-                          <div className="text-2xl font-bold text-slate-900">{formatTimeShort(workSeconds)}</div>
+                          <div className="text-2xl font-bold text-slate-900">{productiveHours}</div>
                           <div className="text-xs text-slate-500">of 8h target</div>
                           <Progress value={workProgress} className="mt-2 h-2" />
                         </div>
@@ -335,7 +384,7 @@ const Dashboard = () => {
                             </div>
                             <span className="text-sm font-medium text-slate-700">Break Time</span>
                           </div>
-                          <div className="text-2xl font-bold text-slate-900">{formatTimeShort(breakSeconds)}</div>
+                          <div className="text-2xl font-bold text-slate-900">{formatWorkDuration(breakMinutes / 60)}</div>
                           <div className="text-xs text-slate-500">total breaks</div>
                           <Progress value={breakProgress} className="mt-2 h-2" />
                         </div>

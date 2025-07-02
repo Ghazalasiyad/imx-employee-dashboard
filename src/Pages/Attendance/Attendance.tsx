@@ -5,6 +5,17 @@ import { checkIn, checkOut, getAttendanceSummary } from "@/components/Api/PostSe
 import { toast } from "react-toastify"
 import { format } from "date-fns"
 
+function formatWorkDuration(hoursFloat: number | string) {
+  const hoursNum = typeof hoursFloat === 'string' ? parseFloat(hoursFloat) : hoursFloat;
+  if (isNaN(hoursNum)) return 'N/A';
+  const totalMinutes = Math.round(hoursNum * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes} min`;
+}
+
 const Attendance = () => {
   const [today, setToday] = useState("")
   const [employeeId, setEmployeeId] = useState("")
@@ -42,18 +53,35 @@ const Attendance = () => {
     }
   }, [])
 
+  // Restore timeline from localStorage on mount, per user
+  useEffect(() => {
+    const employeeId = localStorage.getItem("employeeId");
+    if (employeeId) {
+      const stored = localStorage.getItem(`timelineEvents_${employeeId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored).map((event: any) => ({
+          ...event,
+          time: new Date(event.time),
+        }));
+        setTimelineEvents(parsed);
+      } else {
+        setTimelineEvents([]);
+      }
+    }
+  }, []);
 
- const addTimelineEvent = (type: string, description: string) => {
-  const now = new Date()
-  const newEvent = { type, time: now, description }
-
-  setTimelineEvents((prev) => {
-    const updated = [...prev, newEvent]
-    localStorage.setItem("timelineEvents", JSON.stringify(updated))
-    return updated
-  })
-}
-
+  const addTimelineEvent = (type: string, description: string) => {
+    const now = new Date();
+    const newEvent = { type, time: now, description };
+    setTimelineEvents((prev) => {
+      const updated = [...prev, newEvent];
+      const employeeId = localStorage.getItem("employeeId");
+      if (employeeId) {
+        localStorage.setItem(`timelineEvents_${employeeId}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -164,6 +192,14 @@ const Attendance = () => {
       setBreakEndTime(breakEnd)
       setOnBreak(!!breakStart && !breakEnd)
       setCheckOutTime(checkOut)
+    } else {
+      // No record for today, reset all state
+      setHasCheckedIn(false)
+      setHasCheckedOut(false)
+      setOnBreak(false)
+      setBreakStartTime(null)
+      setBreakEndTime(null)
+      setCheckOutTime(null)
     }
   }, [data])
 
@@ -189,7 +225,7 @@ const Attendance = () => {
               ? format(checkOutTime, "hh:mm a")
               : "N/A",
           hours: record.totalHoursWorked
-            ? `${record.totalHoursWorked}h`
+            ? formatWorkDuration(record.totalHoursWorked)
             : calculateTotalHours(
               record.checkInTime ? new Date(record.checkInTime) : null,
               record.checkOutTime ? new Date(record.checkOutTime) : checkOutTime,
