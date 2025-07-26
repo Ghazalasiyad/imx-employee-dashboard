@@ -1,7 +1,7 @@
 import axios from 'axios';
-const stage = 'dev';
+const stage = 'prod';
 const url = {
-    dev: 'http://localhost:4000/api/v1',
+    dev: '/api/v1', // Use relative URL for development with Vite proxy
     prod: 'https://api.ideometrix.com/api/v1'
 };
 const BASE_URL = url[stage];

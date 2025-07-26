@@ -82,9 +82,10 @@ export async function getAttendanceSummary(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  // const today = new Date().toISOString().split("T")[0];
+  // Use Pakistan timezone to match backend
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
   const response = await Instance.get(
-    `/employee/attendance/summary/${employeeId}`
+    `/employee/attendance/summary/${employeeId}/by-date?date=${today}`
   );
   return response.data.data;
 }
@@ -119,9 +120,10 @@ export async function getSequentialAttendance(): Promise<any> {
     throw new Error("Employee ID not found");
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  // Use Pakistan timezone to match backend
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
   const response = await Instance.get(
-    `/employee/sequence/${employeeId}?date=${today}`
+    `/employee/attendance/sequence/${employeeId}?date=${today}`
   );
   return response.data.data;
 }

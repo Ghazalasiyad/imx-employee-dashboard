@@ -124,7 +124,7 @@ const Attendance = () => {
         return checkIn()
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (hasCheckedIn) {
         const outTime = new Date()
         setCheckOutTime(outTime)
@@ -139,6 +139,8 @@ const Attendance = () => {
         addTimelineEvent("checkin", `Checked in at ${formatTime(new Date())}`)
         toast.success("Checked in successfully!")
       }
+      // Refetch attendance data to sync with backend
+      await refetch()
     },
     onError: (error: any) => {
       const message =
@@ -156,22 +158,27 @@ const Attendance = () => {
         setBreakEndTime(endTime)
         setOnBreak(false)
         addTimelineEvent("break-end", `Break ended at ${formatTime(endTime)}`)
+        toast.success("Break ended successfully!")
       } else {
         await StartBreak()
         const startTime = new Date()
         setBreakStartTime(startTime)
         setOnBreak(true)
         addTimelineEvent("break-start", `Break started at ${formatTime(startTime)}`)
+        toast.success("Break started successfully!")
       }
-    } catch (error) {
+      // Refetch attendance data to sync with backend
+      await refetch()
+    } catch (error: any) {
       console.error("Break API Error:", error)
-      toast.error("Failed to update break status")
+      const message = error?.response?.data?.message || "Failed to update break status"
+      toast.error(message)
     } finally {
       setLoading(false)
     }
   }
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["attendanceSummary", employeeId],
     queryFn: getAttendanceSummary,
     enabled: !!employeeId,
